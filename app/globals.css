@@ -1,26 +1,168 @@
 @import "tailwindcss";
 
+/* ---------- tokens: colours from the brand (logo, mascot video, the lavender of the menu-button mockups) ---------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #ebe2f4;            /* lavender ground, from the mockups */
+  --surface: #ddd0ec;       /* one tone step deeper */
+  --milk: #fbf9fd;          /* the menu's white field, the hamburger's white */
+  --ink: #241a33;           /* deep plum, the logo's outlines read against lavender */
+  --muted: #5e5470;
+  --accent: #ff7cbe;        /* the cow's cheeks */
+  --accent-strong: #ff5faf;
+  --accent-ink: #241a33;
+
+  --font-display: var(--font-stack-headline), "Avenir Next", "Helvetica Neue", sans-serif;
+  --font-text: var(--font-stack-text), "Avenir Next", "Helvetica Neue", sans-serif;
+
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-head: clamp(2rem, 1.3rem + 3vw, 3.5rem);
+  --step-display: clamp(2.75rem, 6.4vw, 6.25rem);
+
+  --margin: clamp(1rem, 2.2vw, 2rem);
+  --anchor: 8vw;                       /* the one left line the hero text, the pearls and the headings share */
+  --gutter: clamp(1rem, 2vw, 2rem);
+  --section: clamp(5rem, 12vw, 13rem);
+  --radius: 999px;                     /* one shape for the page: the circle */
+  --header-h: clamp(5.5rem, 10vh, 7.5rem);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --t-press: 140ms;
+  --t-hover: 180ms;
+  --t-ui: 240ms;
+  --t-reveal: 800ms;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@media (max-width: 63.9rem) {
+  :root { --anchor: 1.25rem; }
+}
+@media (max-width: 47.9rem) {
+  :root { --header-h: 5.5rem; }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ---------- hide scrollbar globally ---------- */
+html,
+body,
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: auto;
+  background: var(--bg);
+}
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-text); font-size: var(--step-body); line-height: 1.5;
+  font-kerning: normal; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
 }
+h1, h2, h3, p, figure, blockquote, ul, ol { margin: 0; }
+ul[class], ol[class] { padding: 0; list-style: none; }
+img, video, svg { display: block; max-width: 100%; }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; }
+a { color: inherit; }
+:target { scroll-margin-top: 2rem; }
+::selection { background: var(--accent); color: var(--accent-ink); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; hyphens: none; letter-spacing: -0.03em; }
+p { text-wrap: pretty; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+html.nav-open { overflow: hidden; }
+
+/* ---------- controls ---------- */
+.button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6em;
+  min-height: 3.25rem; padding: 0 1.6rem; border-radius: var(--radius);
+  background: var(--accent); color: var(--accent-ink); font-weight: 500; text-decoration: none; white-space: nowrap;
+  transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) ease;
+}
+.button:active { transform: scale(0.97); }
+.button--ink { background: var(--milk); color: var(--ink); }
+.link { text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 0.2em; text-decoration-thickness: 0.07em; transition: text-decoration-color var(--t-hover) ease; }
+@media (hover: hover) and (pointer: fine) {
+  .button:hover { background-color: var(--accent-strong); }
+  .button--ink:hover { background-color: var(--bg); }
+  .link:hover { text-decoration-color: currentColor; }
+}
+
+/* ---------- header ---------- */
+.header {
+  position: fixed; inset: 0 0 auto 0; z-index: 40; height: var(--header-h);
+  display: flex; align-items: center; padding-inline: var(--margin);
+  transition: transform 420ms var(--ease-out);
+}
+.header.is-hidden { transform: translateY(-110%); }
+.header__logo { display: block; height: calc(var(--header-h) - 2rem); }
+.header__logo img { height: 100%; width: auto; }
+.header__burger-slot { position: absolute; left: 50%; top: 50%; translate: -50% -50%; }
+
+/* the hamburger, as drawn in the mockups: a white rounded square with three lines that ripple on hover */
+.burger {
+  display: grid; place-items: center; width: 3.75rem; height: 3.75rem; border-radius: 1.1rem;
+  background: var(--milk); color: var(--ink);
+  transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) ease;
+}
+.burger:active { transform: scale(0.94); }
+.burger svg { width: 1.75rem; height: 1.75rem; overflow: visible; }
+.burger path { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- full-page navigation ---------- */
+.nav {
+  position: fixed; inset: 0; z-index: 30; background: var(--bg); color: var(--ink);
+  visibility: hidden; clip-path: circle(0px at 50% 3rem);
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter);
+  padding: calc(var(--header-h) + 2vh) var(--margin) 2rem; align-content: end; overflow: hidden;
+}
+.nav__list { grid-column: 1 / 8; display: flex; flex-direction: column; gap: 0.1em; margin-bottom: 4vh; }
+.nav__link {
+  display: inline-block; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.03em; line-height: 1;
+  font-size: clamp(2.75rem, 9vw, 8.5rem); text-decoration: none; padding-block: 0.06em;
+  transition: opacity var(--t-hover) ease, transform 400ms var(--ease-out);
+}
+.nav__link > span { display: inline-block; transition: transform 400ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .nav__list:hover .nav__link:not(:hover) { opacity: 0.35; }
+  .nav__link:hover > span { transform: translateX(0.12em); }
+}
+.nav__picture { grid-column: 8 / 13; align-self: end; justify-self: end; width: min(34vw, 46vh); aspect-ratio: 1; border-radius: 50%; overflow: hidden; margin-bottom: 4vh; }
+.nav__picture { position: relative; }
+.nav__picture img { object-fit: cover; object-position: 38% 50%; }
+.nav__aside { grid-column: 1 / 13; display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; font-size: var(--step-body); }
+.nav__aside p { margin: 0; }
+@media (max-width: 63.9rem) {
+  .nav { padding-top: calc(var(--header-h) + 1rem); align-content: space-between; }
+  .nav__list { grid-column: 1 / 13; margin-bottom: 0; }
+  .nav__link { font-size: clamp(2.5rem, 13vw, 3.5rem); }
+  .nav__picture { grid-column: 7 / 13; width: 34vw; margin-bottom: 0; }
+  .nav__aside { font-size: 1rem; }
+}
+
+/* ---------- hero: full screen scrubbable video ---------- */
+.hero { position: relative; min-height: 100svh; color: var(--ink); isolation: isolate; }
+.hero__media {
+  position: absolute; inset: 0; height: 100lvh; overflow: hidden; z-index: 0;
+  background: var(--surface);
+}
+.hero__video { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; background: var(--surface); }
+
