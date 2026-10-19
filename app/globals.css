@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@theme {
+  --font-bherisi: var(--font-bherisi);
+  --font-jamoa: var(--font-jamoa);
+  --font-lato: var(--font-lato);
+}
+
 /* ---------- tokens: colours from the brand (logo, mascot video, the lavender of the menu-button mockups) ---------- */
 :root {
   --bg: #ebe2f4;            /* lavender ground, from the mockups */
@@ -11,8 +17,11 @@
   --accent-strong: #ff5faf;
   --accent-ink: #241a33;
 
-  --font-display: var(--font-stack-headline), "Avenir Next", "Helvetica Neue", sans-serif;
-  --font-text: var(--font-stack-text), "Avenir Next", "Helvetica Neue", sans-serif;
+  --font-display: var(--font-lato), "Avenir Next", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-text: var(--font-lato), "Avenir Next", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-lato: var(--font-lato), sans-serif;
+  --font-jamoa: var(--font-jamoa), "Jamoa Script", cursive, sans-serif;
+  --font-bherisi: var(--font-bherisi), "Bherisi", cursive, sans-serif;
 
   --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
   --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
@@ -25,7 +34,7 @@
   --gutter: clamp(1rem, 2vw, 2rem);
   --section: clamp(5rem, 12vw, 13rem);
   --radius: 999px;                     /* one shape for the page: the circle */
-  --header-h: clamp(5.5rem, 10vh, 7.5rem);
+  --header-h: clamp(6.25rem, 11vh, 8.25rem);
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
@@ -40,7 +49,7 @@
   :root { --anchor: 1.25rem; }
 }
 @media (max-width: 47.9rem) {
-  :root { --header-h: 5.5rem; }
+  :root { --header-h: 5.75rem; }
 }
 
 /* ---------- hide scrollbar globally ---------- */
@@ -113,7 +122,7 @@ html.nav-open { overflow: hidden; }
   transition: transform 420ms var(--ease-out);
 }
 .header.is-hidden { transform: translateY(-110%); }
-.header__logo { display: block; height: calc(var(--header-h) - 2rem); }
+.header__logo { display: block; height: calc(var(--header-h) - 1.25rem); margin-left: clamp(1rem, 2.5vw, 2.5rem); }
 .header__logo img { height: 100%; width: auto; }
 .header__burger-slot { position: absolute; left: 50%; top: 50%; translate: -50% -50%; }
 

@@ -1,21 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Stack_Sans_Headline, Stack_Sans_Text } from "next/font/google";
+import { Lato } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
 import Header from "@/components/Header";
 
-const headline = Stack_Sans_Headline({
-  variable: "--font-stack-headline",
-  subsets: ["latin"],
+const bherisi = localFont({
+  src: "../public/fonts/Bherisi-Regular.ttf",
+  variable: "--font-bherisi",
   display: "swap",
-  adjustFontFallback: false,
 });
 
-const text = Stack_Sans_Text({
-  variable: "--font-stack-text",
-  subsets: ["latin"],
+const jamoaScript = localFont({
+  src: "../public/fonts/JamoaScript.ttf",
+  variable: "--font-jamoa",
   display: "swap",
-  adjustFontFallback: false,
+});
+
+const lato = Lato({
+  subsets: ["latin"],
+  weight: ["300", "400", "700", "900"],
+  variable: "--font-lato",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -30,7 +36,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${headline.variable} ${text.variable}`}>
+    <html lang="en" className={`${bherisi.variable} ${jamoaScript.variable} ${lato.variable}`}>
       <body>
         <SmoothScroll>
           <Header />
