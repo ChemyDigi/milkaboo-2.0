@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Lato } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
-import SmoothScroll from "@/components/SmoothScroll";
-import Header from "@/components/Header";
 
 const bherisi = localFont({
   src: "../public/fonts/Bherisi-Regular.ttf",
@@ -37,12 +35,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${bherisi.variable} ${jamoaScript.variable} ${lato.variable}`}>
-      <body>
-        <SmoothScroll>
-          <Header />
-          {children}
-        </SmoothScroll>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
