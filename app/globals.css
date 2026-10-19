@@ -17,11 +17,11 @@
   --accent-strong: #ff5faf;
   --accent-ink: #241a33;
 
-  --font-display: var(--font-lato), "Avenir Next", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --font-text: var(--font-lato), "Avenir Next", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --font-lato: var(--font-lato), sans-serif;
-  --font-jamoa: var(--font-jamoa), "Jamoa Script", cursive, sans-serif;
-  --font-bherisi: var(--font-bherisi), "Bherisi", cursive, sans-serif;
+  --font-display: var(--font-lato);
+  --font-text: var(--font-lato);
+  --font-lato: var(--font-lato);
+  --font-jamoa: var(--font-jamoa);
+  --font-bherisi: var(--font-bherisi);
 
   --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
   --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
@@ -92,6 +92,10 @@ a { color: inherit; }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; hyphens: none; letter-spacing: -0.03em; }
 p { text-wrap: pretty; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.font-bherisi { font-family: var(--font-bherisi); }
+.font-jamoa { font-family: var(--font-jamoa); }
+.font-lato { font-family: var(--font-lato); }
 
 /* Lenis */
 html.lenis, html.lenis body { height: auto; }
