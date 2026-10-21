@@ -6,6 +6,7 @@
   --font-bherisi: var(--font-bherisi);
   --font-jamoa: var(--font-jamoa);
   --font-lato: var(--font-lato);
+  --font-mainstay: var(--font-mainstay);
 }
 
 /* ---------- tokens: colours from the brand (logo, mascot video, the lavender of the menu-button mockups) ---------- */
@@ -19,7 +20,7 @@
   --accent-strong: #ff5faf;
   --accent-ink: #241a33;
 
-  --font-display: var(--font-lato);
+  --font-display: var(--font-mainstay);
   --font-text: var(--font-lato);
 
   --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
@@ -88,13 +89,15 @@ a { color: inherit; }
 :target { scroll-margin-top: 2rem; }
 ::selection { background: var(--accent); color: var(--accent-ink); }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; hyphens: none; letter-spacing: -0.03em; }
+/* Mainstay is a connected script: one true weight, no tightened tracking */
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; hyphens: none; letter-spacing: normal; }
 p { text-wrap: pretty; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 .font-bherisi { font-family: var(--font-bherisi); }
 .font-jamoa { font-family: var(--font-jamoa); }
 .font-lato { font-family: var(--font-lato); }
+.font-mainstay { font-family: var(--font-mainstay); }
 
 /* Lenis */
 html.lenis, html.lenis body { height: auto; }
@@ -148,7 +151,7 @@ html.nav-open { overflow: hidden; }
 }
 .nav__list { grid-column: 1 / 8; display: flex; flex-direction: column; gap: 0.1em; margin-bottom: 4vh; }
 .nav__link {
-  display: inline-block; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.03em; line-height: 1;
+  display: inline-block; font-family: var(--font-display); font-weight: 400; letter-spacing: normal; line-height: 1;
   font-size: clamp(2.75rem, 9vw, 8.5rem); text-decoration: none; padding-block: 0.06em;
   transition: opacity var(--t-hover) ease, transform 400ms var(--ease-out);
 }
@@ -176,6 +179,13 @@ html.nav-open { overflow: hidden; }
   position: absolute; inset: 0; height: 100lvh; overflow: hidden; z-index: 0;
   background: var(--surface);
 }
+/* a soft cinematic vignette: settles the bright frames and lifts the type */
+.hero__media::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(120% 95% at 50% 42%, transparent 58%, rgba(36, 26, 51, 0.22) 100%),
+    linear-gradient(to bottom, rgba(36, 26, 51, 0.12), transparent 16%);
+}
 .hero__video { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; background: var(--surface); }
 
 /* ---------- hero copy: scroll-locked text moments over the scrub ---------- */
@@ -186,26 +196,59 @@ html.nav-open { overflow: hidden; }
 .hero__copy--left { align-items: center; justify-content: flex-start; padding-left: var(--anchor); }
 .hero__copy--bl { align-items: flex-end; justify-content: flex-start; padding-left: var(--anchor); }
 .hero__copy--br { align-items: flex-end; justify-content: flex-end; padding-right: var(--anchor); text-align: right; }
-.hero__copy__inner { max-width: min(34rem, 86vw); }
-.hero__copy__inner > * { opacity: 0; visibility: hidden; }
-.hero__eyebrow {
-  font-family: var(--font-jamoa); font-size: var(--step-lead); color: var(--accent-strong);
-  margin-bottom: 0.4em;
-  text-shadow: 0 0 1.5rem rgba(251, 249, 253, 0.9);
-}
+.hero__copy--center { align-items: center; justify-content: center; text-align: center; }
+.hero__copy--center .hero__body { margin-inline: auto; }
+/* blocks start hidden; "rise" and "bounce" also hide their children, which the
+   timeline then reveals one by one */
+.hero__copy__inner { max-width: min(34rem, 86vw); opacity: 0; visibility: hidden; }
+.hero__copy[data-anim="rise"] .hero__copy__inner > *,
+.hero__copy[data-anim="bounce"] .hero__copy__inner > * { opacity: 0; visibility: hidden; }
 .hero__heading {
-  font-size: var(--step-head); line-height: 1.05;
-  text-shadow: 0 0 1rem rgba(251, 249, 253, 0.7), 0 0 2.5rem rgba(251, 249, 253, 0.85);
+  font-size: clamp(2.5rem, 1.5rem + 4vw, 4.5rem); line-height: 1.16;
+  color: var(--copy-tint, var(--ink));
+  /* drop-shadow, not text-shadow: it wraps what is visible after the word masks clip,
+     so the milky halo never paints the masks' rectangles */
+  filter: drop-shadow(0 0 0.6rem rgba(251, 249, 253, 0.8)) drop-shadow(0 0 1.8rem rgba(251, 249, 253, 0.7));
 }
+/* each heading word rises out of its own mask; the padding/margin pair gives the
+   script's swashes and descenders room so nothing clips once the word is at rest */
+.hero__mask {
+  display: inline-block; overflow: hidden; vertical-align: bottom;
+  padding: 0.22em 0.14em; margin: -0.22em -0.14em;
+}
+.hero__word { display: inline-block; will-change: transform; }
 .hero__body {
-  margin-top: 1rem; max-width: 38ch; font-size: var(--step-body); color: var(--ink);
+  margin-top: 1.1rem; max-width: 36ch; font-size: var(--step-lead); line-height: 1.45; color: var(--ink);
   text-shadow: 0 0 0.75rem rgba(251, 249, 253, 0.8), 0 0 2rem rgba(251, 249, 253, 0.7);
 }
 .hero__copy--br .hero__body { margin-left: auto; }
-.hero__copy--apple .hero__eyebrow {
-  text-shadow: 0 0 0.6rem rgba(251, 249, 253, 0.95), 0 0 1.5rem rgba(251, 249, 253, 0.9), 0 0 2.5rem rgba(251, 249, 253, 0.8);
+.hero__copy--feature .hero__copy__inner { max-width: min(44rem, 88vw); }
+.hero__copy--feature .hero__heading { font-size: clamp(2.9rem, 6.6vw, 6.4rem); line-height: 1.1; }
+.hero__bword { display: inline-block; }
+/* the glowing underline flourish beneath "Let the Magic Bloom." */
+.hero__flourish {
+  display: block; height: 0.3rem; width: min(15rem, 62%); margin-top: 0.7rem; border-radius: 999px;
+  background: linear-gradient(90deg, var(--copy-tint, var(--accent-strong)), transparent);
+  box-shadow: 0 0 0.9rem var(--copy-tint, var(--accent-strong));
+  opacity: 0; visibility: hidden;
 }
-.hero__copy--apple .hero__heading { font-size: var(--step-display); letter-spacing: -0.035em; }
+.hero__copy--br .hero__flourish {
+  margin-left: auto;
+  background: linear-gradient(270deg, var(--copy-tint, var(--accent-strong)), transparent);
+}
+/* the one warm, shimmering spark in the custard caves */
+.hero__spark {
+  display: inline-block; color: #ffb02e;
+  filter: drop-shadow(0 0 0.5rem rgba(255, 176, 46, 0.85));
+  animation: hero-spark 2.6s var(--ease-in-out) infinite;
+}
+@keyframes hero-spark {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.18) rotate(14deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__spark { animation: none; }
+}
 
 /* the small "scroll" invitation at the very start */
 .hero__hint {
@@ -229,5 +272,34 @@ html.nav-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .hero__hint__line { animation: none; }
 }
+
+/* the chapter rail: one dot per story moment, filling with its scene's colour */
+.hero__rail {
+  position: absolute; right: clamp(0.9rem, 2vw, 2rem); top: 50%; translate: 0 -50%; z-index: 3;
+  display: flex; flex-direction: column; gap: clamp(0.8rem, 1.6vh, 1.1rem); align-items: center;
+}
+.hero__rail__dot {
+  width: 0.7rem; height: 0.7rem; border-radius: 50%; padding: 0;
+  border: 2px solid rgba(36, 26, 51, 0.35); background: rgba(251, 249, 253, 0.55);
+  box-shadow: 0 0 0.6rem rgba(251, 249, 253, 0.6);
+  transition: transform var(--t-ui) var(--ease-out), background-color var(--t-ui) ease, border-color var(--t-ui) ease;
+}
+.hero__rail__dot.is-on {
+  background: var(--dot-tint, var(--accent-strong));
+  border-color: var(--dot-tint, var(--accent-strong));
+}
+.hero__rail__dot.is-now { transform: scale(1.55); }
+@media (hover: hover) and (pointer: fine) {
+  .hero__rail__dot:hover { transform: scale(1.35); }
+  .hero__rail__dot.is-now:hover { transform: scale(1.55); }
+}
+@media (max-width: 47.9rem) {
+  .hero__rail { right: 0.65rem; }
+  .hero__rail__dot { width: 0.55rem; height: 0.55rem; }
+}
+
+
+
+
 
 

@@ -15,6 +15,12 @@ const jamoaScript = localFont({
   display: "swap",
 });
 
+const mainstay = localFont({
+  src: "../public/fonts/Mainstay.ttf",
+  variable: "--font-mainstay",
+  display: "swap",
+});
+
 const lato = Lato({
   subsets: ["latin"],
   weight: ["300", "400", "700", "900"],
@@ -34,7 +40,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${bherisi.variable} ${jamoaScript.variable} ${lato.variable}`}>
+    <html lang="en" className={`${bherisi.variable} ${jamoaScript.variable} ${lato.variable} ${mainstay.variable}`}>
       <body>{children}</body>
     </html>
   );
