@@ -24,7 +24,7 @@ export default function Header() {
     const off = lenis.on("scroll", (l) => {
       const el = header.current;
       if (!el) return;
-      const pastHero = l.scroll > innerHeight * 4.6;
+      const pastHero = l.scroll > innerHeight * 7.1;
       const hide = !openRef.current && l.direction === 1 && pastHero;
       el.classList.toggle("is-hidden", hide);
     });

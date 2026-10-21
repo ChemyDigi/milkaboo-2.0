@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-@theme {
+/* inline, so Tailwind's utilities use the next/font variables set on <html>
+   without re-declaring them on :root (which made them circular and broke every custom font) */
+@theme inline {
   --font-bherisi: var(--font-bherisi);
   --font-jamoa: var(--font-jamoa);
   --font-lato: var(--font-lato);
@@ -19,9 +21,6 @@
 
   --font-display: var(--font-lato);
   --font-text: var(--font-lato);
-  --font-lato: var(--font-lato);
-  --font-jamoa: var(--font-jamoa);
-  --font-bherisi: var(--font-bherisi);
 
   --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
   --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
@@ -178,4 +177,57 @@ html.nav-open { overflow: hidden; }
   background: var(--surface);
 }
 .hero__video { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; background: var(--surface); }
+
+/* ---------- hero copy: scroll-locked text moments over the scrub ---------- */
+.hero__copy {
+  position: absolute; inset: 0; z-index: 2; display: flex; pointer-events: none;
+  padding: calc(var(--header-h) + 2vh) var(--margin) clamp(3rem, 10vh, 6rem);
+}
+.hero__copy--left { align-items: center; justify-content: flex-start; padding-left: var(--anchor); }
+.hero__copy--bl { align-items: flex-end; justify-content: flex-start; padding-left: var(--anchor); }
+.hero__copy--br { align-items: flex-end; justify-content: flex-end; padding-right: var(--anchor); text-align: right; }
+.hero__copy__inner { max-width: min(34rem, 86vw); }
+.hero__copy__inner > * { opacity: 0; visibility: hidden; }
+.hero__eyebrow {
+  font-family: var(--font-jamoa); font-size: var(--step-lead); color: var(--accent-strong);
+  margin-bottom: 0.4em;
+  text-shadow: 0 0 1.5rem rgba(251, 249, 253, 0.9);
+}
+.hero__heading {
+  font-size: var(--step-head); line-height: 1.05;
+  text-shadow: 0 0 1rem rgba(251, 249, 253, 0.7), 0 0 2.5rem rgba(251, 249, 253, 0.85);
+}
+.hero__body {
+  margin-top: 1rem; max-width: 38ch; font-size: var(--step-body); color: var(--ink);
+  text-shadow: 0 0 0.75rem rgba(251, 249, 253, 0.8), 0 0 2rem rgba(251, 249, 253, 0.7);
+}
+.hero__copy--br .hero__body { margin-left: auto; }
+.hero__copy--apple .hero__eyebrow {
+  text-shadow: 0 0 0.6rem rgba(251, 249, 253, 0.95), 0 0 1.5rem rgba(251, 249, 253, 0.9), 0 0 2.5rem rgba(251, 249, 253, 0.8);
+}
+.hero__copy--apple .hero__heading { font-size: var(--step-display); letter-spacing: -0.035em; }
+
+/* the small "scroll" invitation at the very start */
+.hero__hint {
+  position: absolute; inset: auto 0 0 0; z-index: 2; display: flex; justify-content: center;
+  padding-bottom: clamp(1.25rem, 4vh, 2.5rem); pointer-events: none;
+}
+.hero__hint__inner {
+  display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+  color: var(--ink); font-size: var(--step-small); letter-spacing: 0.22em; text-transform: uppercase;
+  text-shadow: 0 0 1rem rgba(251, 249, 253, 0.8);
+}
+.hero__hint__line {
+  width: 1.5px; height: 2.75rem; background: currentColor; transform-origin: top;
+  animation: hero-hint 2.2s var(--ease-in-out) infinite;
+}
+@keyframes hero-hint {
+  0% { transform: scaleY(0); opacity: 1; }
+  55% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__hint__line { animation: none; }
+}
+
 
