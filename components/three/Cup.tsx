@@ -10,9 +10,11 @@ import PlaceholderCup from "./PlaceholderCup";
 import type { Visual } from "./sceneState";
 
 const { cup } = gameConfig;
+// the model is big: start downloading it as soon as the game loads
+if (cup.useModel) useGLTF.preload(cup.modelUrl);
 
 /**
- * The real cup from /public/models/milkaboo-cup.glb, scaled to `cup.height` and stood on `cup.bottom`.
+ * The real cup model (`cup.modelUrl`), scaled to `cup.height` and stood on `cup.bottom`.
  * Every material gets the curse; a material whose name contains "logo" also gets the win glint.
  */
 function ModelCup({ curse }: { curse: CurseUniforms }) {
@@ -50,7 +52,6 @@ interface Props {
 export default function Cup({ ref, curse, visual, tier, children }: Props) {
   return (
     <group ref={ref}>
-      {/* the ghost doesn't wait for the cup's textures/model to load */}
       <Suspense fallback={null}>
         {cup.useModel ? <ModelCup curse={curse} /> : <PlaceholderCup curse={curse} visual={visual} tier={tier} />}
       </Suspense>

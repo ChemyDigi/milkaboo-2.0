@@ -21,7 +21,6 @@ interface FlavorCard {
   themeColor: string;
   glowColor: string;
   borderGlow: string;
-  textGlow: string;
   badgeBg: string;
   ghostType: "apple" | "beast" | "custard" | "rose";
 }
@@ -40,7 +39,6 @@ const FLAVORS: FlavorCard[] = [
     themeColor: "#a3ff84",
     glowColor: "rgba(139, 255, 132, 0.4)",
     borderGlow: "rgba(163, 255, 132, 0.65)",
-    textGlow: "0 0 16px rgba(163, 255, 132, 0.95), 0 0 32px rgba(34, 197, 94, 0.6)",
     badgeBg: "rgba(34, 197, 94, 0.25)",
     ghostType: "apple",
   },
@@ -57,7 +55,6 @@ const FLAVORS: FlavorCard[] = [
     themeColor: "#c084fc",
     glowColor: "rgba(192, 132, 252, 0.45)",
     borderGlow: "rgba(192, 132, 252, 0.7)",
-    textGlow: "0 0 16px rgba(192, 132, 252, 0.95), 0 0 32px rgba(168, 85, 247, 0.6)",
     badgeBg: "rgba(168, 85, 247, 0.25)",
     ghostType: "beast",
   },
@@ -74,7 +71,6 @@ const FLAVORS: FlavorCard[] = [
     themeColor: "#fed778",
     glowColor: "rgba(254, 215, 120, 0.45)",
     borderGlow: "rgba(254, 215, 120, 0.7)",
-    textGlow: "0 0 16px rgba(254, 215, 120, 0.95), 0 0 32px rgba(245, 158, 11, 0.6)",
     badgeBg: "rgba(245, 158, 11, 0.25)",
     ghostType: "custard",
   },
@@ -91,7 +87,6 @@ const FLAVORS: FlavorCard[] = [
     themeColor: "#ff7cbe",
     glowColor: "rgba(255, 124, 190, 0.5)",
     borderGlow: "rgba(255, 124, 190, 0.75)",
-    textGlow: "0 0 16px rgba(255, 124, 190, 0.95), 0 0 32px rgba(244, 63, 94, 0.6)",
     badgeBg: "rgba(244, 63, 94, 0.25)",
     ghostType: "rose",
   },
@@ -113,7 +108,7 @@ function FlavorGhostBadge({ type, color }: { type: FlavorCard["ghostType"]; colo
           />
           <div className="relative flex items-center gap-1 rounded-full px-3 py-1 bg-black/60 border border-[#a3ff84]/50 backdrop-blur-md shadow-lg">
             <span className="text-xl">🍏</span>
-            <span className="text-sm font-black text-[#a3ff84] drop-shadow-[0_0_8px_rgba(163,255,132,0.8)]">
+            <span className="text-sm font-black text-[#a3ff84]">
               👻 Phantom
             </span>
           </div>
@@ -136,7 +131,7 @@ function FlavorGhostBadge({ type, color }: { type: FlavorCard["ghostType"]; colo
           />
           <div className="relative flex items-center gap-1 rounded-full px-3 py-1 bg-black/60 border border-[#c084fc]/50 backdrop-blur-md shadow-lg">
             <span className="text-xl">😈</span>
-            <span className="text-sm font-black text-[#c084fc] drop-shadow-[0_0_8px_rgba(192,132,252,0.8)]">
+            <span className="text-sm font-black text-[#c084fc]">
               👾 Beast
             </span>
           </div>
@@ -159,7 +154,7 @@ function FlavorGhostBadge({ type, color }: { type: FlavorCard["ghostType"]; colo
           />
           <div className="relative flex items-center gap-1 rounded-full px-3 py-1 bg-black/60 border border-[#fed778]/50 backdrop-blur-md shadow-lg">
             <span className="text-xl">⭐</span>
-            <span className="text-sm font-black text-[#fed778] drop-shadow-[0_0_8px_rgba(254,215,120,0.8)]">
+            <span className="text-sm font-black text-[#fed778]">
               👻 Sprite
             </span>
           </div>
@@ -181,7 +176,7 @@ function FlavorGhostBadge({ type, color }: { type: FlavorCard["ghostType"]; colo
         />
         <div className="relative flex items-center gap-1 rounded-full px-3 py-1 bg-black/60 border border-[#ff7cbe]/50 backdrop-blur-md shadow-lg">
           <span className="text-xl">👑</span>
-          <span className="text-sm font-black text-[#ff7cbe] drop-shadow-[0_0_8px_rgba(255,124,190,0.8)]">
+          <span className="text-sm font-black text-[#ff7cbe]">
             👻 Princess
           </span>
         </div>
@@ -516,7 +511,6 @@ export default function HalloweenExperience() {
                 className="block text-2xl sm:text-3xl font-black uppercase tracking-[0.25em] text-[#d6c7ff]"
                 style={{
                   fontFamily: "var(--g-font-display, var(--font-bherisi, sans-serif))",
-                  textShadow: "0 0 14px rgba(180, 100, 255, 0.7)",
                 }}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -530,18 +524,8 @@ export default function HalloweenExperience() {
                 className="font-creepster mt-1 text-7xl sm:text-8xl xl:text-9xl font-black uppercase tracking-wider text-white select-none"
                 style={{
                   lineHeight: 0.92,
-                  textShadow:
-                    "0 0 20px #c084fc, 0 0 45px #9333ea, 0 0 85px rgba(147, 51, 234, 0.85)",
                   WebkitTextStroke: "1.5px rgba(255, 255, 255, 0.35)",
                 }}
-                animate={{
-                  textShadow: [
-                    "0 0 20px #c084fc, 0 0 45px #9333ea, 0 0 85px rgba(147, 51, 234, 0.85)",
-                    "0 0 35px #f472b6, 0 0 65px #c084fc, 0 0 100px rgba(217, 70, 239, 0.95)",
-                    "0 0 20px #c084fc, 0 0 45px #9333ea, 0 0 85px rgba(147, 51, 234, 0.85)",
-                  ],
-                }}
-                transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
               >
                 GHOSTS
               </motion.h1>
@@ -549,10 +533,6 @@ export default function HalloweenExperience() {
               {/* "HAVE TAKEN OVER!" - Dripping Creepster */}
               <motion.h2
                 className="font-creepster mt-2 text-3xl sm:text-4xl xl:text-5xl font-black tracking-tight uppercase text-[#fdf8ff] select-none"
-                style={{
-                  textShadow:
-                    "0 0 15px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 124, 190, 0.75), 0 0 50px rgba(244, 63, 94, 0.5)",
-                }}
               >
                 HAVE TAKEN OVER!
               </motion.h2>
@@ -566,7 +546,7 @@ export default function HalloweenExperience() {
               >
                 Our delicious Milkaboo flavours have been conquered by mischievous ghosts!
                 Play a game, win the challenge, and claim a{" "}
-                <span className="font-extrabold text-[#ff7cbe] drop-shadow-[0_0_12px_rgba(255,124,190,0.9)]">
+                <span className="font-extrabold text-[#ff7cbe]">
                   FREE drink!
                 </span>
               </motion.p>
@@ -659,7 +639,14 @@ export default function HalloweenExperience() {
       {/* ========================================================================= */}
       {/* FLAVOUR SELECTION SECTION: 4 Conquered Flavour Cards                      */}
       {/* ========================================================================= */}
-      <div className="relative">
+      {/* Navy backdrop for the flavour section, fading in/out so it blends with the hero and page */}
+      <div
+        className="relative"
+        style={{
+          background:
+            "linear-gradient(to bottom, transparent 0, #031233 220px, #031233 calc(100% - 160px), transparent 100%)",
+        }}
+      >
         <SpookyFlavorBackdrop />
 
         <section className="relative z-10 mx-auto max-w-7xl px-4 pt-6 pb-40 sm:px-6 lg:px-8">
@@ -670,7 +657,6 @@ export default function HalloweenExperience() {
               className="text-2xl sm:text-3xl font-black uppercase tracking-[0.22em] text-[#e8dcfa]"
               style={{
                 fontFamily: "var(--g-font-display, var(--font-bherisi, sans-serif))",
-                textShadow: "0 0 15px rgba(255, 255, 255, 0.45)",
               }}
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -682,10 +668,6 @@ export default function HalloweenExperience() {
 
             <motion.h2
               className="font-creepster mt-1 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-wider text-[#ff7cbe] select-none"
-              style={{
-                textShadow:
-                  "0 0 20px #ff7cbe, 0 0 45px rgba(255, 124, 190, 0.8), 0 0 70px rgba(219, 39, 119, 0.6)",
-              }}
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
@@ -816,7 +798,6 @@ export default function HalloweenExperience() {
                     className="font-creepster text-2xl sm:text-3xl font-black uppercase tracking-wider transition-colors duration-300 select-none"
                     style={{
                       color: flavor.themeColor,
-                      textShadow: flavor.textGlow,
                       lineHeight: 1.15,
                     }}
                   >
@@ -907,7 +888,6 @@ export default function HalloweenExperience() {
                     className="font-creepster mt-3 text-3xl sm:text-4xl font-black uppercase tracking-wider"
                     style={{
                       color: selectedFlavor.themeColor,
-                      textShadow: selectedFlavor.textGlow,
                     }}
                   >
                     {selectedFlavor.fullName}

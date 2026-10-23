@@ -1,19 +1,20 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { gameConfig } from "@/lib/gameConfig";
 import type { DeviceTier } from "@/hooks/useDeviceTier";
 import type { CurseUniforms } from "./curse";
 import Graveyard, { GROUND_Y } from "./Graveyard";
-import { batGeometry, groundTexture, moonTexture, softDot } from "./textures";
+import { batGeometry, groundFade, groundTexture, softDot } from "./textures";
 import type { Visual } from "./sceneState";
 
-const { colors } = gameConfig;
+const { colors, backdrop } = gameConfig;
 const HORIZON = new THREE.Color(colors.fog);
 const WARM_HORIZON = new THREE.Color("#4a2a44");
-const MOON = { position: [3.8, 6.8, -24] as [number, number, number], radius: 2.1 };
+useTexture.preload(backdrop.url);
 
 interface Props {
   visual: Visual;
@@ -23,8 +24,8 @@ interface Props {
 }
 
 /**
- * The night: a starry sky with a full moon and storm clouds, lightning, the graveyard, drifting fog,
- * the purple mist leaking from under the ghost, and bats. The haze clears to a warm glow when the cup is freed.
+ * The night: the painted cemetery backdrop, lightning, jack-o'-lanterns, drifting fog, the purple mist
+ * leaking from under the ghost, and bats. The haze clears to a warm glow when the cup is freed.
  */
 export default function Atmosphere({ visual, tier, reducedMotion, curse }: Props) {
   const scene = useThree((s) => s.scene);
@@ -45,155 +46,98 @@ export default function Atmosphere({ visual, tier, reducedMotion, curse }: Props
   const low = tier === "low";
   return (
     <>
-      <Sky visual={visual} curse={curse} />
-      <Moon />
-      <Clouds visual={visual} reducedMotion={reducedMotion} />
+      {/* the painting loads on its own; the night sky colour shows meanwhile */}
+      <color attach="background" args={[colors.night]} />
+      <Suspense fallback={null}>
+        <Backdrop curse={curse} />
+      </Suspense>
       <Lightning visual={visual} curse={curse} reducedMotion={reducedMotion} />
       <Ground visual={visual} />
       <Graveyard visual={visual} tier={tier} reducedMotion={reducedMotion} />
       <GroundMist visual={visual} count={low ? 4 : 7} reducedMotion={reducedMotion} />
       <FogPuffs visual={visual} count={low ? 4 : 8} reducedMotion={reducedMotion} />
       <Mist visual={visual} count={low ? 4 : 7} />
-      <Bats visual={visual} reducedMotion={reducedMotion} count={low ? 4 : 6} center={[0, 2.6, -5]} radius={3.5} size={0.5} speed={0.3} />
-      <Bats visual={visual} reducedMotion={reducedMotion} count={low ? 3 : 6} center={MOON.position} radius={3.0} size={1.0} speed={0.18} />
+      <Bats visual={visual} reducedMotion={reducedMotion} count={low ? 4 : 7} center={[0, 2.6, -5]} radius={3.5} size={0.5} speed={0.3} />
+      <Bats visual={visual} reducedMotion={reducedMotion} count={low ? 3 : 6} center={[2.4, 5.2, -12]} radius={3.0} size={0.8} speed={0.18} />
+      <BatSwarm visual={visual} curse={curse} reducedMotion={reducedMotion} count={low ? 6 : 12} />
     </>
   );
 }
 
-/** Sky dome: a gradient from the horizon to a near-black zenith, twinkling stars, lightning and the win's warmth. */
-function Sky({ visual, curse }: { visual: Visual; curse: CurseUniforms }) {
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        uniforms: {
-          uHorizon: { value: HORIZON.clone() },
-          uZenith: { value: new THREE.Color(colors.night) },
-          uTime: { value: 0 },
-          uFlash: curse.uFlash,
-          uWarm: curse.uWarm,
-        },
-        vertexShader: /* glsl */ `
-          varying vec3 vDir;
-          void main() {
-            vDir = position;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: /* glsl */ `
-          uniform vec3 uHorizon;
-          uniform vec3 uZenith;
-          uniform float uTime;
-          uniform float uFlash;
-          uniform float uWarm;
-          varying vec3 vDir;
-          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-          void main() {
-            vec3 d = normalize(vDir);
-            float h = clamp(d.y * 1.5 + 0.12, 0.0, 1.0);
-            vec3 col = mix(uHorizon, uZenith, pow(h, 0.6));
-            // stars, denser and brighter toward the zenith
-            vec2 sph = vec2(atan(d.z, d.x), asin(clamp(d.y, -1.0, 1.0))) * 70.0;
-            vec2 id = floor(sph);
-            vec2 fr = fract(sph) - 0.5;
-            float rnd = hash(id);
-            vec2 offset = (vec2(hash(id + 1.3), hash(id + 2.7)) - 0.5) * 0.6;
-            float star = (1.0 - smoothstep(0.0, 0.05, length(fr - offset))) * step(0.92, rnd);
-            star *= (0.55 + 0.45 * sin(uTime * 2.5 + rnd * 40.0)) * smoothstep(0.02, 0.3, d.y);
-            col += vec3(0.9, 0.92, 1.0) * star * 0.8;
-            col += vec3(0.5, 0.55, 0.8) * uFlash;
-            col = mix(col, col * vec3(1.4, 1.1, 1.0) + vec3(0.03, 0.015, 0.0), uWarm * 0.35);
-            gl_FragColor = vec4(col, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
-          }
-        `,
-      }),
-    [curse],
-  );
+/**
+ * The painted cemetery (`gameConfig.backdrop`), far behind everything. It always fills the screen like
+ * CSS `object-fit: cover`, follows the camera with a touch of parallax, and lights up with the lightning
+ * (the sky more than the ground) and the warm glow of the win.
+ */
+function Backdrop({ curse }: { curse: CurseUniforms }) {
+  const map = useTexture(backdrop.url);
+  const mesh = useRef<THREE.Mesh>(null);
+  const material = useMemo(() => {
+    map.colorSpace = THREE.SRGBColorSpace;
+    return new THREE.ShaderMaterial({
+      depthWrite: false,
+      uniforms: { uMap: { value: map }, uHaze: { value: HORIZON.clone() }, uFlash: curse.uFlash, uWarm: curse.uWarm },
+      vertexShader: /* glsl */ `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform sampler2D uMap;
+        uniform vec3 uHaze;
+        uniform float uFlash;
+        uniform float uWarm;
+        varying vec2 vUv;
+        void main() {
+          // seen through the night haze: softer and lower in contrast, so the cup and the ghost stand out
+          vec3 col = mix(uHaze * 0.6, texture2D(uMap, vUv).rgb, ${backdrop.opacity.toFixed(2)});
+          float sky = smoothstep(0.35, 0.8, vUv.y);
+          col += col * uFlash * (0.5 + 1.6 * sky) + vec3(0.35, 0.4, 0.75) * uFlash * 0.22 * sky;
+          col = mix(col, col * vec3(1.35, 1.1, 1.0) + vec3(0.03, 0.015, 0.0), uWarm * 0.35);
+          gl_FragColor = vec4(col, 1.0);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }
+      `,
+    });
+  }, [map, curse]);
   useEffect(() => () => material.dispose(), [material]);
-  useFrame(() => {
-    material.uniforms.uTime.value = visual.time;
-    (material.uniforms.uHorizon.value as THREE.Color).copy(HORIZON).lerp(WARM_HORIZON, visual.warm);
+
+  const forward = useMemo(() => new THREE.Vector3(), []);
+  const right = useMemo(() => new THREE.Vector3(), []);
+  const up = useMemo(() => new THREE.Vector3(), []);
+  useFrame(({ camera, size }) => {
+    const m = mesh.current;
+    if (!m) return;
+    const cam = camera as THREE.PerspectiveCamera;
+    const image = map.image as { width: number; height: number };
+    const imageAspect = image.width / image.height;
+    const d = backdrop.distance;
+    const viewH = 2 * d * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    const viewW = viewH * (size.width / Math.max(size.height, 1));
+    // cover the view (plus a margin for the parallax), then slide toward the focus point without showing an edge
+    const h = Math.max(viewH, viewW / imageAspect) * 1.06;
+    const w = h * imageAspect;
+    const slideX = THREE.MathUtils.clamp((0.5 - backdrop.focus[0]) * w - cam.position.x * 0.4, -(w - viewW) / 2, (w - viewW) / 2);
+    const slideY = THREE.MathUtils.clamp((0.5 - backdrop.focus[1]) * h, -(h - viewH) / 2, (h - viewH) / 2);
+    cam.getWorldDirection(forward);
+    right.setFromMatrixColumn(cam.matrixWorld, 0);
+    up.setFromMatrixColumn(cam.matrixWorld, 1);
+    m.position.copy(cam.position).addScaledVector(forward, d).addScaledVector(right, slideX).addScaledVector(up, slideY);
+    m.quaternion.copy(cam.quaternion);
+    m.scale.set(w, h, 1);
   });
+
   return (
-    <mesh material={material} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[60, 24, 16]} />
+    <mesh ref={mesh} material={material} renderOrder={-10} frustumCulled={false}>
+      <planeGeometry />
     </mesh>
   );
 }
 
-function Moon() {
-  const { disc, glow } = useMemo(
-    () => ({
-      disc: new THREE.MeshBasicMaterial({ map: moonTexture(), color: new THREE.Color(1.0, 1.02, 1.18), fog: false, toneMapped: false }),
-      glow: new THREE.SpriteMaterial({
-        map: softDot(),
-        color: "#8c9cff",
-        transparent: true,
-        opacity: 0.35,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        fog: false,
-      }),
-    }),
-    [],
-  );
-  useEffect(
-    () => () => {
-      disc.dispose();
-      glow.dispose();
-    },
-    [disc, glow],
-  );
-  return (
-    <group position={MOON.position}>
-      <sprite material={glow} scale={MOON.radius * 4.2} position={[0, 0, -0.5]} />
-      <mesh material={disc}>
-        <circleGeometry args={[MOON.radius, 48]} />
-      </mesh>
-    </group>
-  );
-}
-
-/** Storm clouds crawling across the moon. */
-function Clouds({ visual, reducedMotion }: { visual: Visual; reducedMotion: boolean }) {
-  const group = useRef<THREE.Group>(null);
-  const material = useMemo(
-    () => new THREE.SpriteMaterial({ map: softDot(), color: "#15102a", transparent: true, opacity: 0.85, depthWrite: false, fog: false }),
-    [],
-  );
-  useEffect(() => () => material.dispose(), [material]);
-  const clouds = useMemo(
-    () =>
-      Array.from({ length: 5 }, (_, i) => ({
-        x: -14 + i * 7,
-        y: MOON.position[1] - 2 + (i % 3) * 1.6,
-        w: 9 + (i % 2) * 4,
-        h: 2.4 + (i % 3) * 0.6,
-        speed: 0.12 + (i % 3) * 0.05,
-      })),
-    [],
-  );
-  useFrame(() => {
-    const drift = reducedMotion ? 0.25 : 1;
-    group.current?.children.forEach((c, i) => {
-      const k = clouds[i];
-      c.position.x = ((k.x + visual.time * k.speed * drift + 18) % 36) - 18;
-    });
-    material.opacity = 0.85 - visual.warm * 0.5;
-  });
-  return (
-    <group ref={group} position={[0, 0, MOON.position[2] + 1.5]}>
-      {clouds.map((k, i) => (
-        <sprite key={i} material={material} position={[k.x, k.y, 0]} scale={[k.w, k.h, 1]} />
-      ))}
-    </group>
-  );
-}
-
-/** Lightning every so often: a bolt behind the hill, the sky and the ghost light up, and the moonlight flares. */
+/** Lightning every so often: a bolt across the sky, the backdrop, ghost and cup light up, and the bats scatter. */
 function Lightning({ visual, curse, reducedMotion }: { visual: Visual; curse: CurseUniforms; reducedMotion: boolean }) {
   const light = useRef<THREE.DirectionalLight>(null);
   const strike = useRef({ next: 5, flashes: [] as { at: number; power: number }[], boltUntil: 0 });
@@ -253,14 +197,21 @@ function Lightning({ visual, curse, reducedMotion }: { visual: Visual; curse: Cu
   );
 }
 
-/** Dark earth stretching back to the horizon, and the cup's soft shadow on it. */
+/** A patch of dark earth under the cup that fades out into the backdrop's ground, and the cup's soft shadow. */
 function Ground({ visual }: { visual: Visual }) {
   const { material, shadow } = useMemo(() => {
     const map = groundTexture();
-    map.repeat.set(14, 14);
+    map.repeat.set(3, 2.4);
     return {
-      material: new THREE.MeshStandardMaterial({ map, color: "#b4a4cc", roughness: 1 }),
-      shadow: new THREE.MeshBasicMaterial({ map: softDot(), color: "#000", transparent: true, opacity: 0.75, depthWrite: false }),
+      material: new THREE.MeshStandardMaterial({
+        map,
+        alphaMap: groundFade(),
+        transparent: true,
+        depthWrite: false,
+        color: "#b4a4cc",
+        roughness: 1,
+      }),
+      shadow: new THREE.MeshBasicMaterial({ map: softDot(), color: "#000", transparent: true, opacity: 0.85, depthWrite: false }),
     };
   }, []);
   useEffect(
@@ -271,14 +222,18 @@ function Ground({ visual }: { visual: Visual }) {
     [material, shadow],
   );
   useFrame(() => {
-    shadow.opacity = 0.75 - visual.warm * 0.3;
+    shadow.opacity = 0.85 - visual.warm * 0.3;
   });
   return (
     <>
-      <mesh material={material} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y, -10]}>
-        <planeGeometry args={[90, 70]} />
+      <mesh material={material} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y, -1.5]} renderOrder={-5}>
+        <planeGeometry args={[16, 12]} />
       </mesh>
-      <mesh material={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y + 0.01, 0.1]} scale={[3.2, 2.0, 1]}>
+      {/* a wide soft shadow, and a dark contact shadow right under the base so the cup sits on the ground */}
+      <mesh material={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y + 0.01, 0.1]} scale={[3.4, 2.2, 1]}>
+        <planeGeometry />
+      </mesh>
+      <mesh material={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y + 0.02, 0]} scale={[2.2, 1.6, 1]}>
         <planeGeometry />
       </mesh>
     </>
@@ -438,4 +393,57 @@ function Bats({ visual, reducedMotion, count, center, radius, size, speed }: Bat
   });
 
   return <instancedMesh ref={mesh} args={[geometry, material, count]} frustumCulled={false} />;
+}
+
+/**
+ * A swarm of bats bursting across the screen: whenever lightning strikes (and now and then on its own),
+ * a dozen bats sweep from one side to the other, flapping hard.
+ */
+function BatSwarm({ visual, curse, reducedMotion, count }: { visual: Visual; curse: CurseUniforms; reducedMotion: boolean; count: number }) {
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  const geometry = useMemo(() => batGeometry(), []);
+  const material = useMemo(() => new THREE.MeshBasicMaterial({ color: "#070410", side: THREE.DoubleSide }), []);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const flight = useRef({ start: -100, next: 6, dir: 1, y: 2, wasFlashing: false });
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      material.dispose();
+    },
+    [geometry, material],
+  );
+
+  useFrame(() => {
+    const m = mesh.current;
+    if (!m) return;
+    const t = visual.time;
+    const f = flight.current;
+    const flashing = curse.uFlash.value > 0.5;
+    if (!reducedMotion && ((flashing && !f.wasFlashing && t - f.start > 3) || t > f.next)) {
+      f.start = t;
+      f.next = t + 14 + Math.random() * 10;
+      f.dir = Math.random() < 0.5 ? 1 : -1;
+      f.y = 1.6 + Math.random() * 2;
+    }
+    f.wasFlashing = flashing;
+    const k = (t - f.start) / 3.2; // 3.2 s to cross
+    m.visible = k >= 0 && k <= 1;
+    if (!m.visible) return;
+    for (let i = 0; i < count; i++) {
+      const lag = (i % 4) * 0.06 + (i / count) * 0.12;
+      const x = THREE.MathUtils.lerp(-9, 9, THREE.MathUtils.clamp(k * 1.25 - lag, 0, 1)) * f.dir;
+      const y = f.y + ((i * 0.37) % 1.4) - 0.7 + Math.sin(t * 3 + i * 1.7) * 0.25;
+      const z = -1.5 - ((i * 0.53) % 3);
+      dummy.position.set(x, y, z);
+      const flap = 0.3 + 0.7 * Math.abs(Math.sin(t * 16 + i * 2.3));
+      const s = 0.32 + (i % 3) * 0.08;
+      dummy.scale.set(s * flap * f.dir, s, s);
+      dummy.rotation.z = Math.sin(t * 4 + i) * 0.25;
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    }
+    m.instanceMatrix.needsUpdate = true;
+  });
+
+  return <instancedMesh ref={mesh} args={[geometry, material, count]} frustumCulled={false} visible={false} />;
 }

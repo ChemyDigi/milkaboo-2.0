@@ -2,11 +2,8 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Smartphone, Wind } from "lucide-react";
 import { copy } from "@/lib/copy";
-import { BatIcon, CupIcon } from "./icons";
-
-const stepIcons = { phone: Smartphone, breath: Wind, cup: CupIcon } as const;
+import { BatIcon } from "./icons";
 
 interface Props {
   attemptsLeft: number | null;
@@ -38,24 +35,7 @@ export default function IntroScreen({ attemptsLeft, busy, notice, onStart }: Pro
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
       >
-        <ol className="flex flex-col gap-2">
-          {copy.steps.map((step, i) => {
-            const Icon = stepIcons[step.icon];
-            return (
-              <li key={step.icon} className="flex items-center gap-3 text-sm leading-snug">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/10 text-(--g-accent)">
-                  <Icon size={18} />
-                </span>
-                <span>
-                  <span className="sr-only">Step {i + 1}: </span>
-                  {step.text}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-
-        <div className="mt-4 flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-2">
           {notice && (
             <p className="text-center text-sm text-(--g-danger)" role="alert">
               {notice}

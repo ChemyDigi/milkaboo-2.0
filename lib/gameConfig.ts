@@ -106,13 +106,12 @@ export const gameConfig = {
   },
 
   cup: {
-    /** drop the real model here; the primitive placeholder is used until it exists (see README) */
-    modelUrl: "/models/milkaboo-cup.glb",
-    /** set to true once the .glb is in /public/models */
-    useModel: false,
-    /** the GLB is scaled so its height matches this (scene units), and sits on y = bottom */
+    /** the real cup model; the primitive placeholder is used when useModel is false (see README) */
+    modelUrl: "/images/halloween/MilkaBoo_Cup.glb",
+    useModel: true,
+    /** the GLB is scaled so its height matches this (scene units), and sits on y = bottom (the ground, GROUND_Y) */
     height: 2.6,
-    bottom: -1.35,
+    bottom: -1.5,
     /** extra rotation for the GLB so the logo faces the camera (radians, around Y) */
     modelRotationY: 0,
     /** the logo's centre on the cup surface: angle around Y (0 = facing the camera) and height */
@@ -123,17 +122,39 @@ export const gameConfig = {
     logoHalfHeight: 0.46,
   },
 
+  /** the ghost's portrait, draped over the front of the cup with her head above the lid (cup space, scene units) */
+  ghostSprite: {
+    url: "/images/halloween/Mischievous%20Pink%20Rose%20Ghost.png",
+    /** width × height of the picture in the scene (keep the image's aspect ratio) */
+    size: [2.46, 1.64] as [number, number],
+    /** where her face is in the image (0–1 from the left, 0–1 from the bottom); it's centred over the cup */
+    face: [0.4, 0.59] as [number, number],
+    /** her face is this far above the top of the lid; the picture sits this far in front of the cup's axis */
+    faceAboveLid: 0.35,
+    depth: 1.2,
+  },
+
+  /** the painted cemetery behind the game; it always fills the screen, cropped like CSS object-fit: cover */
+  backdrop: {
+    url: "/images/halloween/Moonlit%20Gothic%20Cemetery%20Gate.png",
+    /** the point of the painting (0–1 from the left, 0–1 from the bottom) kept in view on narrow screens */
+    focus: [0.6, 0.5] as [number, number],
+    /** how far in front of the camera it hangs (scene units); everything else is closer */
+    distance: 45,
+    /** 0–1: how strongly the painting shows through the night haze (lower = softer, less contrast) */
+    opacity: 0.6,
+  },
+
   /** colours used in the 3D scene (the UI uses the CSS tokens in globals.css) */
   colors: {
     /** sky at the top and at the horizon (the horizon is also the fog colour) */
     night: "#07040f",
     fog: "#2a1a3f",
-    /** the ghost: a grimy pale sheet with an ectoplasm-green glow, ember eyes, red when it fights back */
-    ghost: "#dfe6dd",
-    ghostGlow: "#7ff5c8",
-    rim: "#8affd6",
+    /** the ghost's rose-pink glow (and the haze on the parts of the cup she still holds), the seam where
+     * she lets go, red when she fights back */
+    ghostGlow: "#ff6fb5",
+    rim: "#ff4fa6",
     grip: "#ff2a3c",
-    ember: "#ff4a1a",
     /** the cup, from the product photo: taro-purple tea, near-black pearls */
     taro: "#9d6ee4",
     pearl: "#1a0d08",

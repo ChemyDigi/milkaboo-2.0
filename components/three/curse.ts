@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { gameConfig } from "@/lib/gameConfig";
 
-const { cup } = gameConfig;
+const { cup, colors } = gameConfig;
 
 /**
  * Uniforms shared by the ghost and every cup material. Updated once per frame by the Director (Scene.tsx);
@@ -26,6 +26,13 @@ export function createCurseUniforms() {
     uShine: { value: -1 },
     /** 0–1 lightning flash (written by Atmosphere, read by the ghost and the sky) */
     uFlash: { value: 0 },
+    /** 0–1 the glowing seam where the ghost is letting go (written by Ghost) */
+    uEdge: { value: 0 },
+    /** 0–1 the ghost is fighting back: the seam turns red (written by Ghost) */
+    uGrip: { value: 0 },
+    uHaunt: { value: new THREE.Color(colors.ghostGlow) },
+    uSeam: { value: new THREE.Color(colors.rim) },
+    uSeamGrip: { value: new THREE.Color(colors.grip) },
   };
 }
 
@@ -71,8 +78,9 @@ float ghostCover(vec3 p) {
 `;
 
 /**
- * Makes a cup material "cursed" wherever the ghost covers it: desaturated, cold and flickering, and in its
- * real colours where it's free. Works on any built-in material, so it also works on the real GLB's materials.
+ * Makes a cup material "haunted" wherever the ghost covers it: pale and milky, with her pink glow swirling
+ * through it and a stuttering light, and in its real colours where it's free. A glowing seam marks where
+ * she's letting go. Works on any built-in material, so it also works on the real GLB's materials.
  * `shine` adds the glint that sweeps across the logo in the win reveal (needs a `map`).
  */
 export function applyCurse<T extends THREE.Material>(material: T, uniforms: CurseUniforms, shine = false): T {
@@ -98,16 +106,26 @@ export function applyCurse<T extends THREE.Material>(material: T, uniforms: Curs
         uniform float uFlicker;
         uniform float uWarm;
         uniform float uShine;
+        uniform float uEdge;
+        uniform float uGrip;
+        uniform vec3 uHaunt;
+        uniform vec3 uSeam;
+        uniform vec3 uSeamGrip;
         ${coverageGLSL}`,
       )
       .replace(
         "#include <opaque_fragment>",
         `#include <opaque_fragment>
         vec3 cupP = (uWorldToCup * vec4(vCurseWorld, 1.0)).xyz;
-        float cursed = smoothstep(-0.12, 0.05, ghostCover(cupP));
+        float cover = ghostCover(cupP);
+        float cursed = smoothstep(-0.12, 0.05, cover);
         float lum = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
-        vec3 cold = vec3(lum) * vec3(0.6, 0.68, 1.0) * (0.72 - 0.18 * uFlicker);
-        gl_FragColor.rgb = mix(gl_FragColor.rgb, cold, cursed);
+        float swirl = cvNoise(cupP * 2.5 + vec3(0.0, uTime * 0.35, uTime * 0.2));
+        vec3 milky = mix(vec3(lum), vec3(0.92, 0.86, 1.0), 0.45);
+        vec3 haunted = milky * (0.95 - 0.2 * uFlicker) + uHaunt * (0.12 + smoothstep(0.45, 0.85, swirl) * 0.3);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, haunted, cursed * 0.85);
+        float seam = (1.0 - smoothstep(0.0, 0.07, abs(cover))) * uEdge;
+        gl_FragColor.rgb += mix(uSeam, uSeamGrip, uGrip) * seam * 1.4;
         gl_FragColor.rgb *= 1.0 + uWarm * 0.2;`,
       );
     if (shine) {

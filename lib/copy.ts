@@ -4,11 +4,6 @@ export const BRAND = "Milkaboo";
 export const copy = {
   title: `Free the ${BRAND} Cup`,
   tagline: "A ghost has wrapped itself around your bubble tea. Suck it off before time runs out and the cup is yours.",
-  steps: [
-    { icon: "phone", text: "Hold your phone close to your lips. Close, not touching!" },
-    { icon: "breath", text: "Suck air in, long and hard. Shouting won't scare it off." },
-    { icon: "cup", text: "Peel the ghost off in 20 seconds and win a free cup." },
-  ],
   start: "Start",
   triesLeft: (n: number) => (n === 1 ? "1 try left today" : `${n} tries left today`),
   noTriesLeft: "No tries left today. The ghost needs its beauty sleep. Come back tomorrow!",

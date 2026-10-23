@@ -105,7 +105,7 @@ export const condensationRoughness = () =>
     { srgb: false, repeat: true },
   );
 
-/* ---------- the graveyard ---------- */
+/* ---------- the ground ---------- */
 
 /** dark, patchy earth */
 export const groundTexture = () =>
@@ -139,62 +139,24 @@ export const groundTexture = () =>
     { srgb: true, repeat: true },
   );
 
-/** a full moon with maria and craters */
-export const moonTexture = () =>
-  canvasTexture("moon", 256, 256, (ctx) => {
-    ctx.fillStyle = "#d9dcec";
-    ctx.beginPath();
-    ctx.arc(128, 128, 128, 0, Math.PI * 2);
-    ctx.fill();
-    const rand = seeded(77);
-    for (let i = 0; i < 9; i++) {
-      ctx.fillStyle = `rgba(150,156,190,${0.35 + rand() * 0.3})`;
-      ctx.beginPath();
-      ctx.ellipse(60 + rand() * 140, 50 + rand() * 150, 18 + rand() * 40, 14 + rand() * 30, rand() * 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    for (let i = 0; i < 26; i++) {
-      const x = 20 + rand() * 216;
-      const y = 20 + rand() * 216;
-      const r = 2 + rand() * 6;
-      ctx.fillStyle = "rgba(130,136,170,0.35)";
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  });
-
-/** weathered stone with "R.I.P." (mapped onto the front of a tombstone) */
-export const tombstoneTexture = () =>
-  canvasTexture("tombstone", 128, 192, (ctx) => {
-    ctx.fillStyle = "#4a4356";
-    ctx.fillRect(0, 0, 128, 192);
-    const rand = seeded(41);
-    for (let i = 0; i < 900; i++) {
-      ctx.fillStyle = rand() < 0.5 ? "rgba(90,82,104,0.5)" : "rgba(40,34,50,0.5)";
-      ctx.fillRect(rand() * 128, rand() * 192, 1 + rand() * 3, 1 + rand() * 3);
-    }
-    // moss creeping up from the ground
-    const moss = ctx.createLinearGradient(0, 192, 0, 120);
-    moss.addColorStop(0, "rgba(40,70,40,0.7)");
-    moss.addColorStop(1, "rgba(40,70,40,0)");
-    ctx.fillStyle = moss;
-    ctx.fillRect(0, 120, 128, 72);
-    ctx.strokeStyle = "rgba(25,20,32,0.8)";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(90, 10);
-    ctx.lineTo(80, 50);
-    ctx.lineTo(96, 80);
-    ctx.lineTo(88, 120);
-    ctx.stroke();
-    ctx.fillStyle = "#231d2c";
-    ctx.font = "bold 24px Georgia, serif";
-    ctx.textAlign = "center";
-    ctx.fillText("R.I.P.", 64, 60);
-    ctx.font = "12px Georgia, serif";
-    ctx.fillText("1874 – 1899", 64, 84);
-  });
+/** alpha for the ground around the cup: solid in the middle, fading out so the painted backdrop shows beyond */
+export const groundFade = () =>
+  canvasTexture(
+    "ground-fade",
+    128,
+    128,
+    (ctx) => {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, 128, 128);
+      const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      g.addColorStop(0, "#fff");
+      g.addColorStop(0.45, "#fff");
+      g.addColorStop(1, "#000");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 128, 128);
+    },
+    { srgb: false },
+  );
 
 /* ---------- pumpkins ---------- */
 

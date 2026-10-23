@@ -31,10 +31,10 @@ app/(game)/layout.tsx, game.css   full-screen layout, game fonts and colour toke
 components/ui/Game.tsx            screen flow: intro → permission → calibrating → playing → won | lost
 components/ui/*                   screens, HUD, mute button, ?debug panel, custom SVG icons
 components/three/Scene.tsx        canvas, Director (per-frame shared uniforms), camera, lights, bloom
-components/three/Ghost.tsx        the ghost: torn sheet, bony arms, clawed hands, face (shader in ghostMaterial.ts)
+components/three/Ghost.tsx        the ghost: her portrait draped over the front of the cup (shader in ghostMaterial.ts)
 components/three/Cup.tsx          real .glb or PlaceholderCup.tsx (built from the product photo); both get the "cursed" shader
-components/three/Atmosphere.tsx   sky dome, moon, storm clouds, lightning, ground, fog layers, mist, bats
-components/three/Graveyard.tsx    headstones, spiked fence, candles, dead trees, haunted house, pumpkins, fireflies
+components/three/Atmosphere.tsx   painted backdrop, lightning, ground, fog layers, mist, bats, bat swarm
+components/three/Graveyard.tsx    jack-o'-lanterns and fireflies
 components/three/Reveal.tsx       the win: flash, warm halo, sparkles
 hooks/useBreathDetector.ts        mic → { rms, flatness, isSucking, calibrate() }
 hooks/useGameLoop.ts              per-frame round loop (mic → engine → 3D, HUD at 10 Hz)
@@ -47,9 +47,9 @@ app/api/game/{status,start,claim} and app/api/admin/redeem
 lib/server/*                      HMAC tokens, request helpers, storage interface
 ```
 
-**One number drives the visuals.** The ghost and every cup material share a GLSL function, `ghostCover()` in `curse.ts`, that answers "is this point still covered?" for the current progress. The ghost dissolves (with a glowing pink seam) wherever it returns "free", and the cup switches from cursed (grey, cold, flickering) to its real colours in exactly the same places. The stages match the brief: 0–30% the ghost only stretches toward the player, 30–70% it peels from the top (straw and lid come free), 70–99% it clings to the logo with its hands, and at 100% it's sucked into the camera.
+**One number drives the visuals.** The ghost and every cup material share a GLSL function, `ghostCover()` in `curse.ts`, that answers "is this point still covered?" for the current progress. The cup is haunted (pale and milky, with her pink glow swirling through it and a stuttering light) wherever it returns "covered", switches to its real colours wherever it returns "free", and a glowing pink seam (red while she fights back) runs along the border. The stages match the brief: 0–30% the ghost only stretches toward the player, 30–70% it peels from the top (straw and lid come free), 70–99% only the logo is still haunted, and at 100% it's sucked into the camera.
 
-**The look.** The ghost is a grimy, torn sheet with a leaning hood, hollow eye sockets, ember pupils that roam and then lock onto the player, black tears, and a wide jagged mouth full of crooked teeth. It twitches, tilts its head, lunges when it grabs the cup tighter and shakes with laughter when you lose. Its glow is ectoplasm green; the seam where it lets go is green too, red while it fights back. Behind it: a starry sky with a full moon and storm clouds, lightning every 7–17 s (sky, ghost and moonlight flare; a bolt behind the hill), a graveyard with headstones, a spiked fence, candles, dead trees, a haunted house with firelit windows, a dozen jack-o'-lanterns (three of them casting light), ground mist and fireflies. Film grain and a heavy vignette finish it. All of it is procedural: no textures or models are downloaded.
+**The look.** The ghost is the pink rose ghost from `public/images/halloween/Mischievous Pink Rose Ghost.png` (position and size in `gameConfig.ghostSprite`). Her portrait is draped over the front of the cup, her head above the lid, on a subdivided plane whose vertex shader animates it: her tail wisps drift, she bobs, tilts her head, twitches, lunges at the player, stretches toward them as they suck, rises off the cup as it peels, shudders and flushes red when she fights back, bounces with laughter when you lose, and spins into the camera at the win. Behind it: the painted cemetery `public/images/halloween/Moonlit Gothic Cemetery Gate.png` (`gameConfig.backdrop`), always filling the screen and lighting up with the lightning. Lightning strikes every 7–17 s (a bolt across the sky, the backdrop and ghost flare, the camera jolts, and a swarm of bats bursts across the screen). In front of the painting: ten jack-o'-lanterns on the ground and four floating (three casting light), two looping flocks of bats, fog, ground mist and fireflies. Film grain and a heavy vignette finish it. There is no thunder sound on purpose: the mic would hear a noisy rumble as breath.
 
 **No React renders during play.** The game loop writes plain numbers into a ref (`SceneState`). The 3D scene reads them in `useFrame`. Only the HUD re-renders, about 10 times a second.
 
@@ -127,11 +127,13 @@ These checks stop casual cheating. A determined attacker who reads the client co
 
 ## Swapping in the real cup model
 
-1. Export the cup as **glTF binary**, ideally under 1.5 MB (Draco/Meshopt compression and 1–2K textures). Put it at `public/models/milkaboo-cup.glb`.
-2. In `lib/gameConfig.ts` → `cup`, set `useModel: true`. The model is scaled to `cup.height` and stood on `cup.bottom` automatically. Use `modelRotationY` to turn its logo toward the camera.
-3. Set `logoAngle`, `logoY`, `logoHalfWidth` and `logoHalfHeight` to where the logo sits on the model. The ghost's face and its last clinging patch are placed from these values. Open `?debug`, hold Space to about 80%, and check that the patch covers the logo.
+The game uses `public/images/halloween/MilkaBoo_Cup.glb` (`cup.modelUrl`, `useModel: true`). It is 12 MB, which is slow on mobile data; compressing it (Draco/Meshopt, ideally under 1.5 MB) would make the game start much sooner. To swap in another model:
+
+1. Export the cup as **glTF binary**, ideally under 1.5 MB (Draco/Meshopt compression and 1–2K textures), and point `cup.modelUrl` at it.
+2. In `lib/gameConfig.ts` → `cup`, keep `useModel: true`. The model is scaled to `cup.height` and stood on `cup.bottom` automatically. Use `modelRotationY` to turn its logo toward the camera.
+3. Set `logoAngle`, `logoY`, `logoHalfWidth` and `logoHalfHeight` to where the logo sits on the model. The last haunted patch is placed from these values. Open `?debug`, hold Space to about 80%, and check that the patch covers the logo.
 4. Name the logo's material something containing `logo` to get the glint that sweeps across it in the win reveal.
-5. The ghost's sheet is shaped around the placeholder's proportions (`components/three/cupShape.ts`). If the real cup is much wider, narrower or taller, adjust the outline in `ghostSheetGeometry()`.
+5. Move the ghost with `gameConfig.ghostSprite` (`faceAboveLid`, `depth`, `size`) if the new cup is a different shape.
 
 Every material in the model automatically gets the cursed/free colour shader.
 

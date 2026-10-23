@@ -25,7 +25,7 @@
            max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
 }
 .game__title { font-family: var(--g-font-display), var(--g-font-text), system-ui, sans-serif; font-weight: 400; letter-spacing: 0; line-height: 0.95; }
-/* the title glows like a dying neon sign */
+/* the title flickers like a dying neon sign */
 @keyframes haunt-flicker {
   0%, 100% { opacity: 1; }
   91% { opacity: 1; }
@@ -36,7 +36,7 @@
 }
 .game__title--haunt {
   animation: haunt-flicker 7s infinite;
-  text-shadow: 0 0 14px rgb(138 255 214 / 0.45), 0 0 46px rgb(120 60 200 / 0.7), 0 4px 18px rgb(0 0 0 / 0.8);
+  text-shadow: 0 4px 18px rgb(0 0 0 / 0.8);
 }
 .game__panel {
   background: var(--g-panel); border: 1px solid var(--g-line); border-radius: 1.5rem;

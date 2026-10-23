@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type RefObject } from "react";
+import { Suspense, useMemo, useRef, useState, type RefObject } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, Lightformer, PerformanceMonitor } from "@react-three/drei";
 import { Bloom, EffectComposer, Noise, ToneMapping, Vignette } from "@react-three/postprocessing";
@@ -110,8 +110,18 @@ const FRAMING: Record<SceneMode, { zoom: number; lift: number }> = {
   lost: { zoom: 1.2, lift: 0.08 },
 };
 
-/** Frames the cup for any aspect ratio and screen, sways gently, shakes when the ghost fights back. */
-function CameraRig({ state, visual, reducedMotion }: { state: SceneStateRef; visual: Visual; reducedMotion: boolean }) {
+/** Frames the cup for any aspect ratio and screen, sways gently, shakes when the ghost fights back and with the thunder. */
+function CameraRig({
+  state,
+  visual,
+  curse,
+  reducedMotion,
+}: {
+  state: SceneStateRef;
+  visual: Visual;
+  curse: CurseUniforms;
+  reducedMotion: boolean;
+}) {
   const frame = useRef({ zoom: 1.6, lift: 0.07 });
   const target = useMemo(() => new THREE.Vector3(), []);
 
@@ -129,7 +139,7 @@ function CameraRig({ state, visual, reducedMotion }: { state: SceneStateRef; vis
     const lift = f.lift * 2 * distance * tan;
     const t = visual.time;
     const sway = reducedMotion ? 0 : 1;
-    const shake = reducedMotion ? 0 : visual.grip * 0.035;
+    const shake = reducedMotion ? 0 : visual.grip * 0.035 + Math.min(curse.uFlash.value, 1) * 0.06;
     target.set(0, LOOK_AT.y - lift, 0);
     cam.position.set(
       Math.sin(t * 0.27) * 0.14 * sway + (Math.random() - 0.5) * shake,
@@ -204,7 +214,7 @@ export default function Scene({ state, tier: initialTier, reducedMotion }: Scene
     >
       <PerformanceMonitor flipflops={3} onDecline={() => setTier(lowerTier)} onFallback={() => setTier("low")} />
       <Director state={state} visual={visual} curse={curse} cup={cup} reducedMotion={reducedMotion} />
-      <CameraRig state={state} visual={visual} reducedMotion={reducedMotion} />
+      <CameraRig state={state} visual={visual} curse={curse} reducedMotion={reducedMotion} />
       <Lights visual={visual} />
       {/* a tiny studio environment rendered once, for the plastic's reflections; no HDR download */}
       <Environment resolution={64} frames={1}>
@@ -214,7 +224,10 @@ export default function Scene({ state, tier: initialTier, reducedMotion }: Scene
       </Environment>
       <Atmosphere visual={visual} tier={tier} reducedMotion={reducedMotion} curse={curse} />
       <Cup ref={cup} curse={curse} visual={visual} tier={tier}>
-        <Ghost curse={curse} visual={visual} state={state} reducedMotion={reducedMotion} />
+        {/* her portrait loads on its own; the cup and the scene don't wait for it */}
+        <Suspense fallback={null}>
+          <Ghost curse={curse} visual={visual} state={state} reducedMotion={reducedMotion} />
+        </Suspense>
       </Cup>
       <Reveal visual={visual} tier={tier} />
       <Effects tier={tier} />
