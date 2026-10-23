@@ -1,13 +1,122 @@
 "use client";
 
-import { useRef } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { Fragment, useEffect, useRef, type CSSProperties } from "react";
+import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
+import { useLenis } from "@/components/SmoothScroll";
 
 const SOURCE_SECONDS = 53;
+
+/* the frames the video holds on while a step of the journey is written over it */
+const STOPS = [
+  {
+    at: 3.4,
+    step: "01",
+    title: [
+      { text: "Fresh Milk,", tone: "cream" },
+      { text: "Magic Begins", tone: "pink" },
+    ],
+    body: "Every Milkaboo adventure starts with creamy fresh milk, poured into the secret well that leads to our underground bubble tea factory.",
+  },
+  {
+    at: 10.4,
+    step: "02",
+    place: "low",
+    title: [
+      { text: "Swirl, Sparkle,", tone: "cream" },
+      { text: "Down We Go", tone: "pink" },
+    ],
+    body: "The milk swirls into a sparkling whirlpool, spinning deeper and deeper through twinkling stardust on its way to the hidden world below.",
+  },
+  {
+    at: 13.3,
+    step: "03",
+    place: "top",
+    /* the headline bends like a sign hung over the bridge */
+    arc: true,
+    title: [
+      { text: "Welcome to the", tone: "cream", small: true },
+      { text: "Milkaboo Factory", tone: "pink" },
+    ],
+    body: "Where our busy crew of Milkaboo friends picks, checks and stirs every batch into bubble tea magic.",
+  },
+  {
+    at: 22.7,
+    step: "04",
+    place: "top",
+    /* arched over the mouth of the cave, with the orchard glowing through it */
+    arc: true,
+    title: [
+      { text: "Fresh-picked", tone: "cream", small: true },
+      { text: "Green Apple Bliss", tone: "apple" },
+    ],
+    body: "Beyond the glowing cave lies our secret orchard, where crisp green apples are picked at their juiciest for our zesty Apple Milk Tea.",
+  },
+  {
+    at: 30,
+    step: "05",
+    place: "right",
+    title: [
+      { text: "Petal-soft", tone: "cream", small: true },
+      { text: "Rose Garden", tone: "rose" },
+    ],
+    body: "Deeper in the cave, our roses bloom all year round. Their fragrant petals are gathered by hand to steep a delicate, floral Rose Milk Tea.",
+  },
+  {
+    at: 38.4,
+    step: "06",
+    place: "top",
+    title: [
+      { text: "Silky-smooth", tone: "cream", small: true },
+      { text: "Custard Cove", tone: "custard" },
+    ],
+    body: "Golden custard flows past wobbly caramel puddings, whisked into a rich, velvety Custard Milk Tea with a hint of burnt caramel.",
+  },
+  {
+    at: 51.4,
+    step: "07",
+    place: "right",
+    title: [
+      { text: "Plucked from the", tone: "cream", small: true },
+      { text: "Boba Trees", tone: "boba" },
+    ],
+    body: "Plump, chewy pearls ripen on our magical boba trees, plucked fresh by the basketful and dropped into every cup of bubble tea.",
+  },
+] as const;
+
+/* headline fills, top to bottom of each letter */
+const TONES = {
+  cream: ["#fffdf7", "#f5e9ff"],
+  pink: ["#fff1fb", "#ee8fd6"],
+  apple: ["#fbffec", "#9fdc4f"],
+  rose: ["#fff4f6", "#ff8fab"],
+  custard: ["#fff1b8", "#f2a51c"],
+  boba: ["#fff4e6", "#d08c52"],
+} as const;
+
+/* a line's words as letters, each with its place along the line from -1 (first) to 1 (last) */
+function letters(text: string) {
+  const n = text.replace(/ /g, "").length;
+  let k = 0;
+  return text.split(" ").map((word) => [...word].map((c) => ({ c, u: n > 1 ? (k++ * 2) / (n - 1) - 1 : 0 })));
+}
+
+/* scroll lengths, in % of the viewport */
+const PER_SECOND = 7.5; /* of video playback */
+const MIN_LEAD = 40; /* the shortest run into a freeze */
+const HOLD = 16; /* frozen, until the next scroll erases the copy and the video carries on */
+/* scrolling down past a freeze stops the page here until its copy is fully written */
+const LOCK_PAST = 3;
+/* the next bit of scroll down erases the copy */
+const ERASE_PAST = 2;
 
 export default function Hero() {
   const root = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const lenis = useLenis();
+  const lenisRef = useRef(lenis);
+  useEffect(() => {
+    lenisRef.current = lenis;
+  }, [lenis]);
 
   useGSAP(
     () => {
@@ -49,23 +158,143 @@ export default function Hero() {
           const { reduce } = ctx.conditions as { reduce: boolean };
           gsap.set(video, { scale: 1, x: 0 });
 
+          let locked = false;
+          const unlock = () => {
+            locked = false;
+            lenisRef.current?.start();
+          };
+
+          /* lay the scroll out: play to each freeze, hold on it, then play the rest */
+          const playhead = { t: 0 };
           const tl = gsap.timeline({
             defaults: { ease: "none" },
-            scrollTrigger: {
-              trigger: section,
-              start: "top top",
-              end: "+=350%",
-              pin: true,
-              scrub: reduce ? true : 0.6,
-              anticipatePin: 1,
-              invalidateOnRefresh: true,
-            },
             onUpdate: () => {
-              target = tl.progress() * (video.duration || SOURCE_SECONDS);
+              target = playhead.t;
+            },
+          });
+          const copies = section.querySelectorAll<HTMLElement>(".hero__copy");
+          let pos = 0;
+          let from = 0;
+          const stops = STOPS.map((stop, i) => {
+            const lead = Math.max(MIN_LEAD, (stop.at - from) * PER_SECOND);
+            tl.to(playhead, { t: stop.at, duration: lead }, pos);
+            const freeze = pos + lead;
+            pos = freeze + HOLD;
+            from = stop.at;
+
+            const el = copies[i];
+            const q = gsap.utils.selector(el);
+            /* the copy plays at its own pace, so it is always fully written however fast the scroll is */
+            const copy = gsap.timeline({
+              paused: true,
+              defaults: { ease: "power3.out" },
+              onComplete: () => {
+                if (locked) unlock();
+              },
+            });
+            copy.fromTo(el, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.01 });
+            if (reduce) {
+              copy.from(el.children, { autoAlpha: 0, duration: 0.4 });
+            } else {
+              copy
+                .from(q(".hero__cloud"), { autoAlpha: 0, scale: 0.8, duration: 0.7, ease: "back.out(1.6)" })
+                .from(q(".hero__eyebrow"), { autoAlpha: 0, x: -16, duration: 0.45 }, 0.15)
+                .from(q(".hero__step"), { autoAlpha: 0, scale: 0.4, duration: 0.5, ease: "back.out(2.4)" }, 0.3)
+                .from(
+                  q(".hero__char"),
+                  {
+                    autoAlpha: 0,
+                    y: "0.4em",
+                    scale: 0.5,
+                    rotate: -10,
+                    duration: 0.45,
+                    ease: "back.out(2.2)",
+                    stagger: 0.045,
+                  },
+                  0.4,
+                )
+                .from(q(".hero__spark"), { autoAlpha: 0, scale: 0, duration: 0.4, ease: "back.out(3)", stagger: 0.08 }, ">-0.3")
+                .from(q(".hero__word"), { autoAlpha: 0, y: 6, duration: 0.25, stagger: 0.035 }, "<")
+                .from(q(".hero__cue"), { autoAlpha: 0, y: 10, duration: 0.4 }, ">-0.1");
+            }
+
+            let shown = false;
+            let fade: gsap.core.Tween | undefined;
+            return {
+              freeze,
+              lockAt: freeze + LOCK_PAST,
+              until: freeze + LOCK_PAST + ERASE_PAST,
+              copy,
+              /* armed again whenever the scroll goes back above the freeze */
+              armed: true,
+              show(next: boolean, speed = 0) {
+                if (next === shown) return;
+                shown = next;
+                fade?.kill();
+                if (next) {
+                  gsap.set(el, { y: 0 });
+                  copy.play(0);
+                  return;
+                }
+                /* written in letter by letter, but gone in one quick fade so the video can carry on */
+                copy.pause();
+                fade = gsap.to(el, {
+                  autoAlpha: 0,
+                  y: reduce ? 0 : -24,
+                  /* the harder the scroll, the quicker it goes: 0.2s at rest, down to 0.05s */
+                  duration: gsap.utils.clamp(0.05, 0.2, 0.2 - speed / 20000),
+                  ease: "power2.in",
+                  onComplete: () => {
+                    copy.pause(0);
+                    gsap.set(el, { y: 0 });
+                  },
+                });
+              },
+            };
+          });
+          const rest = (SOURCE_SECONDS - from) * PER_SECOND;
+          tl.to(playhead, { t: () => video.duration || SOURCE_SECONDS, duration: rest }, pos);
+          const total = pos + rest;
+
+          ScrollTrigger.create({
+            animation: tl,
+            trigger: section,
+            start: "top top",
+            end: `+=${total}%`,
+            pin: true,
+            scrub: reduce ? true : 0.6,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const at = self.progress * total;
+              const lenis = lenisRef.current;
+              for (const stop of stops) {
+                if (at < stop.freeze) stop.armed = true;
+                if (stop.armed && lenis && self.direction > 0 && at >= stop.lockAt) {
+                  stop.armed = false;
+                  locked = true;
+                  lenis.scrollTo(self.start + (stop.lockAt / total) * (self.end - self.start), {
+                    immediate: true,
+                    force: true,
+                  });
+                  lenis.stop();
+                  stops.forEach((s) => s.show(s === stop));
+                  if (stop.copy.progress() === 1) unlock();
+                  return;
+                }
+              }
+              if (locked) return;
+              /* the copy is only ever written in by the lock on the way down; leaving it, either way, removes it whole */
+              const speed = Math.abs(self.getVelocity());
+              stops.forEach((s) => {
+                if (at < s.lockAt || at >= s.until) s.show(false, speed);
+              });
             },
           });
 
-          tl.set({}, {}, 100);
+          return () => {
+            if (locked) unlock();
+          };
         },
       );
 
@@ -93,6 +322,79 @@ export default function Hero() {
           tabIndex={-1}
         />
       </div>
+
+      {STOPS.map((stop, i) => {
+        const Title = i === 0 ? "h1" : "h2";
+        return (
+          <div
+            key={stop.step}
+            className={"place" in stop ? `hero__copy hero__copy--${stop.place}` : "hero__copy"}
+          >
+            <div className="hero__cloud" aria-hidden="true" />
+
+            <p className="hero__kicker">
+              <span className="hero__eyebrow">The Milkaboo Journey</span>
+              <span className="hero__step">
+                Step {stop.step}
+                <svg className="hero__spark hero__spark--ticks" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 9 3 3M13 7l2-6M16 12l6-2" />
+                </svg>
+              </span>
+            </p>
+
+            <Title
+              className={`hero__title font-bherisi${"arc" in stop ? " hero__title--arc" : ""}`}
+              aria-label={stop.title.map((l) => l.text).join(" ")}>
+              <svg className="hero__spark hero__spark--star" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 0c1 7 5 11 12 12-7 1-11 5-12 12-1-7-5-11-12-12 7-1 11-5 12-12Z" />
+              </svg>
+              {stop.title.map((line) => (
+                <span
+                  key={line.text}
+                  className={`hero__line${"small" in line ? " hero__line--small" : ""}`}
+                  style={{ "--fill-top": TONES[line.tone][0], "--fill-bottom": TONES[line.tone][1] } as CSSProperties}
+                  aria-hidden="true"
+                >
+                  {letters(line.text).map((word, w) => (
+                    <Fragment key={w}>
+                      {w > 0 && " "}
+                      <span className="hero__nowrap">
+                        {word.map(({ c, u }, j) => (
+                          <span key={j} className="hero__char" style={{ "--u": u } as CSSProperties}>
+                            <span className="hero__char-stroke">{c}</span>
+                            <span className="hero__char-fill">{c}</span>
+                          </span>
+                        ))}
+                      </span>
+                    </Fragment>
+                  ))}
+                </span>
+              ))}
+              <svg className="hero__spark hero__spark--splash" viewBox="0 0 32 32" aria-hidden="true">
+                <path d="M6 4 3 14M14 10l14-6M14 20l12 2" />
+              </svg>
+            </Title>
+
+            <p className="hero__body">
+              {stop.body.split(" ").map((word, j) => (
+                <Fragment key={j}>
+                  {j > 0 && " "}
+                  <span className="hero__word">{word}</span>
+                </Fragment>
+              ))}
+            </p>
+
+            <p className="hero__cue">
+              <span className="hero__cue-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="m7 10 5 5 5-5" />
+                </svg>
+              </span>
+              Scroll to continue the journey
+            </p>
+          </div>
+        );
+      })}
     </section>
   );
 }

@@ -1,11 +1,5 @@
 @import "tailwindcss";
 
-@theme {
-  --font-bherisi: var(--font-bherisi);
-  --font-jamoa: var(--font-jamoa);
-  --font-lato: var(--font-lato);
-}
-
 /* ---------- tokens: colours from the brand (logo, mascot video, the lavender of the menu-button mockups) ---------- */
 :root {
   --bg: #ebe2f4;            /* lavender ground, from the mockups */
@@ -19,9 +13,7 @@
 
   --font-display: var(--font-lato);
   --font-text: var(--font-lato);
-  --font-lato: var(--font-lato);
-  --font-jamoa: var(--font-jamoa);
-  --font-bherisi: var(--font-bherisi);
+  /* --font-lato, --font-jamoa and --font-bherisi come from next/font's classes on <html> */
 
   --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
   --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
@@ -179,3 +171,120 @@ html.nav-open { overflow: hidden; }
 }
 .hero__video { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; background: var(--surface); }
 
+
+/* ---------- hero copy: written over the frozen frame, step 01 of the journey ---------- */
+.hero__copy {
+  --plum: #4a2a7a;
+  position: absolute; z-index: 1; visibility: hidden;
+  top: calc(var(--header-h) + 0.5rem); left: var(--anchor);
+  width: min(40rem, 42vw);
+  padding: clamp(1.5rem, 2.6vw, 2.75rem) clamp(1.25rem, 2.4vw, 2.5rem);
+  color: var(--plum);
+}
+.hero__cloud {
+  position: absolute; inset: -6% -10% -10% -12%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(closest-side at 24% 28%, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.5) 60%, transparent),
+    radial-gradient(closest-side at 58% 22%, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.4) 60%, transparent),
+    radial-gradient(closest-side at 48% 62%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.45) 60%, transparent),
+    radial-gradient(closest-side at 28% 82%, rgb(255 255 255 / 0.65), transparent),
+    rgb(255 255 255 / 0.3);
+  border-radius: 42% 48% 40% 46%;
+  filter: blur(18px);
+}
+.hero__kicker { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.hero__eyebrow { font-weight: 700; font-size: var(--step-small); letter-spacing: 0.22em; text-transform: uppercase; }
+.hero__step {
+  position: relative; display: inline-block; padding: 0.3em 1.1em; border-radius: var(--radius);
+  background: linear-gradient(180deg, #fbd3f1, #f3a9e3); box-shadow: inset 0 -2px 0 rgb(74 42 122 / 0.12);
+  font-weight: 900; font-size: calc(var(--step-small) * 1.15); letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+.hero__title {
+  position: relative; display: inline-block;   /* as wide as the words, so the sparks sit on them */ font-weight: 400; letter-spacing: 0; line-height: 0.98;
+  font-size: clamp(2.5rem, 5vw, 6rem);
+  filter: drop-shadow(0 0.06em 0.05em rgb(74 42 122 / 0.35));
+}
+.hero__line { display: block; }
+/* the letters are two stacked layers, so a selection would paint a block over each one; screen readers get the aria-label */
+.hero__title { -webkit-user-select: none; user-select: none; }
+/* each line's --fill-top / --fill-bottom come from TONES in Hero.tsx */
+.hero__nowrap { white-space: nowrap; }
+.hero__char { position: relative; display: inline-block; }
+.hero__char-stroke {
+  position: absolute; inset: 0; color: var(--plum);
+  -webkit-text-stroke: 0.16em var(--plum);
+}
+.hero__char-fill {
+  position: relative;
+  /* the line box stops short of descenders (g, p, y); pad the painted area past them without moving the letter */
+  display: inline-block; padding-block: 0.2em; margin-block: -0.2em;
+  background: linear-gradient(180deg, var(--fill-top, #fffdf7) 35%, var(--fill-bottom, #f5e9ff) 95%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+.hero__spark { position: absolute; overflow: visible; pointer-events: none; }
+.hero__spark path { fill: none; stroke-linecap: round; }
+.hero__spark--star { left: -0.55em; top: 0.55em; width: 0.38em; height: 0.38em; }
+.hero__spark--star path { fill: #f6b96b; }
+.hero__spark--splash { right: -0.25em; bottom: 0.55em; width: 0.5em; height: 0.5em; }
+.hero__spark--splash path { stroke: #f07acb; stroke-width: 3.5; }
+.hero__spark--ticks { right: -1.3em; top: -0.9em; width: 1.2em; height: 1.2em; }
+.hero__spark--ticks path { stroke: var(--plum); stroke-width: 2; }
+
+.hero__body {
+  max-width: 22em; margin-top: 1rem;
+  font-size: clamp(1rem, 0.9rem + 0.45vw, 1.3rem); font-weight: 400; line-height: 1.4; color: #2f2150;
+}
+.hero__word { display: inline-block; }
+.hero__cue { display: flex; align-items: center; gap: 0.75rem; margin-top: 1.5rem; font-size: var(--step-small); }
+.hero__cue-icon { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #f7c6ee; }
+.hero__cue-icon svg { width: 1.1rem; height: 1.1rem; }
+.hero__cue-icon path { fill: none; stroke: var(--plum); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* on the left like the first step, but low in the frame and without the cloud,
+   for frames where the subject's bright surroundings already carry the dark text */
+.hero__copy--low {
+  top: auto; bottom: clamp(3rem, 12vh, 8rem);
+  width: min(56rem, 52vw);
+}
+.hero__copy--low .hero__cloud { display: none; }
+
+/* centred along the top of the frame, for scenes whose subject fills the lower half */
+.hero__copy--top {
+  left: 0; right: 0; margin-inline: auto; top: calc(var(--header-h) - 2.5rem);
+  width: min(60rem, 90vw); text-align: center;
+}
+.hero__copy--top .hero__cloud { display: none; }
+/* on the right, for scenes whose subject stands left of centre */
+.hero__copy--right { left: auto; right: var(--anchor); width: min(40rem, 40vw); }
+.hero__copy--right .hero__cloud { display: none; }
+.hero__copy--top .hero__kicker { justify-content: center; }
+.hero__copy--top .hero__body { margin-inline: auto; margin-top: 1.75rem; max-width: 30em; }
+.hero__copy--top .hero__cue { justify-content: center; }
+/* over a busy or dark scene the small text goes light */
+:is(.hero__copy--top, .hero__copy--right) :is(.hero__eyebrow, .hero__body, .hero__cue) {
+  color: #fffdf7; text-shadow: 0 1px 2px rgb(36 16 66 / 0.75), 0 0 16px rgb(36 16 66 / 0.5);
+}
+:is(.hero__copy--top, .hero__copy--right) .hero__body { font-weight: 700; }
+
+.hero__line--small { font-size: 0.58em; margin-bottom: 0.1em; }
+/* each letter dips and turns with its place along the line (--u, -1 to 1), so the line arches;
+   only where the line fits on one row */
+@media (min-width: 48rem) {
+  .hero__title--arc .hero__char > * {
+    display: inline-block;
+    transform: translateY(calc(var(--u) * var(--u) * 0.28em)) rotate(calc(var(--u) * 8deg));
+    transform-origin: 50% 100%;
+  }
+}
+
+@media (max-width: 47.9rem) {
+  .hero__copy { left: 0.5rem; right: 0.5rem; width: auto; top: var(--header-h); }
+  .hero__copy--low { top: auto; bottom: 10vh; }
+  .hero__copy--top { top: var(--header-h); }
+  .hero__copy--top .hero__body { margin-top: 1rem; }
+  .hero__title { font-size: clamp(2.4rem, 11vw, 3.4rem); }
+  .hero__body { font-size: 0.95rem; }
+  .hero__cue { display: none; }
+}
