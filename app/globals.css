@@ -174,7 +174,7 @@ html.nav-open { overflow: hidden; }
 }
 
 /* ---------- hero: full screen scrubbable video ---------- */
-.hero { position: relative; min-height: 100svh; color: var(--ink); isolation: isolate; }
+.hero { position: relative; min-height: 100svh; color: var(--ink); isolation: isolate; overflow: hidden; }
 .hero__media {
   position: absolute; inset: 0; height: 100lvh; overflow: hidden; z-index: 0;
   background: var(--surface);
@@ -198,9 +198,20 @@ html.nav-open { overflow: hidden; }
 .hero__copy--br { align-items: flex-end; justify-content: flex-end; padding-right: var(--anchor); text-align: right; }
 .hero__copy--center { align-items: center; justify-content: center; text-align: center; }
 .hero__copy--center .hero__body { margin-inline: auto; }
+/* the bridge railing sits ~36% down the frame at this scene, horizontally centred, and
+   object-fit: cover keeps it there at every aspect ratio, so the block is anchored by
+   its bottom edge just above that line */
+.hero__copy--bridge {
+  align-items: flex-end; justify-content: center; text-align: center;
+  padding-bottom: 66svh;
+}
+.hero__copy--bridge .hero__copy__inner { width: min(80rem, 96vw); max-width: none; }
+.hero__copy--bridge .hero__heading { font-size: clamp(1.9rem, 0.8rem + 3vw, 3.5rem); line-height: 1.12; }
+.hero__copy--bridge .hero__body { margin: 0.5rem auto 0; font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.4rem); }
 /* blocks start hidden; "rise" and "bounce" also hide their children, which the
    timeline then reveals one by one */
-.hero__copy__inner { max-width: min(34rem, 86vw); opacity: 0; visibility: hidden; }
+.hero__copy__inner { max-width: min(34rem, 86vw); opacity: 0; visibility: hidden; will-change: transform, opacity; }
+.hero__copy[data-anim="arc"] .hero__copy__inner > *,
 .hero__copy[data-anim="rise"] .hero__copy__inner > *,
 .hero__copy[data-anim="bounce"] .hero__copy__inner > * { opacity: 0; visibility: hidden; }
 .hero__heading {
@@ -302,4 +313,78 @@ html.nav-open { overflow: hidden; }
 
 
 
+
+
+/* the fly-through moment: clipped to the screen so the giant letters never widen
+   the page, and a text-shadow glow the timeline can fade (a filter can't be tweened away) */
+.hero__copy[data-anim="through"] { overflow: clip; }
+/* no will-change here: it would freeze the raster at 1x and blur the giant letters */
+.hero__copy[data-anim="through"] .hero__copy__inner { will-change: auto; }
+.hero__copy[data-anim="through"] .hero__heading {
+  filter: none;
+  text-shadow: 0px 0px 10px rgba(251, 249, 253, 0.85), 0px 0px 28px rgba(251, 249, 253, 0.7);
+}
+
+/* fly-through effects: a sparkle burst and a milky flash, both centred on the
+   letter the camera flies into */
+.hero__fx { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.hero__sparkle {
+  position: absolute; left: 0; top: 0; translate: -50% -50%;
+  font-size: clamp(1.1rem, 0.8rem + 1.3vw, 2.1rem); line-height: 1; color: #ffc94d;
+  filter: drop-shadow(0 0 1px rgba(36, 26, 51, 0.45)) drop-shadow(0 0 0.5rem rgba(255, 190, 60, 0.95));
+  opacity: 0; visibility: hidden;
+}
+.hero__sparkle[data-tone="1"] { color: #ff5faf; filter: drop-shadow(0 0 1px rgba(36, 26, 51, 0.45)) drop-shadow(0 0 0.5rem rgba(255, 95, 175, 0.9)); }
+.hero__sparkle[data-tone="2"] { color: #ffffff; filter: drop-shadow(0 0 1px rgba(36, 26, 51, 0.5)) drop-shadow(0 0 0.5rem rgba(251, 249, 253, 0.95)); }
+.hero__portal {
+  position: absolute; left: 0; top: 0; width: 170vmax; height: 170vmax; translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(251, 249, 253, 0.75) 22%, rgba(255, 209, 234, 0.35) 42%, transparent 66%);
+  opacity: 0; visibility: hidden;
+}
+
+
+
+/* the fly-through magical dust: one canvas over the whole scene */
+.hero__dust { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+
+
+
+
+/* the curved heading over the bridge: SVG text on a gentle arch (175/1000 of its
+   width tall), the plain line tucked just beneath the middle of the curve */
+.hero__heading--arc { line-height: 0; }
+.hero__arc { display: block; width: 100%; height: auto; overflow: visible; }
+.hero__arctext { font-family: var(--font-display); fill: currentColor; }
+.hero__copy--bridge .hero__heading--arc + .hero__body { margin-top: calc(min(80rem, 96vw) * -0.045); }
+/* white over the bright cave: a soft plum shadow instead of the milky halo, which
+   would wash white letters out */
+.hero__copy--bridge .hero__heading {
+  color: #fff;
+  /* sticker look: a solid plum drop for depth, then a soft MilkaBoo-pink glow */
+  filter: drop-shadow(0 0.22rem 0 rgba(36, 26, 51, 0.75)) drop-shadow(0 0 1rem rgba(255, 95, 175, 0.55));
+}
+/* a plum outline around every white letter, drawn under the fill so it never thins it */
+.hero__copy--bridge .hero__arctext {
+  stroke: #3a2550; stroke-width: 7px; stroke-linejoin: round; paint-order: stroke fill;
+}
+.hero__copy--bridge .hero__body {
+  width: fit-content; max-width: 92%; margin-inline: auto;
+  padding: 0.35em 1.1em; border-radius: var(--radius);
+  color: #fff; font-weight: 700; letter-spacing: 0.01em;
+  background: rgba(58, 37, 80, 0.5);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.35), 0 0.5rem 1.4rem rgba(36, 26, 51, 0.3);
+  text-shadow: none;
+}
+
+
+
+
+
+@media (max-width: 47.9rem) {
+  /* on phones the pill is as wide as the curve dips, so it sits below the ends instead */
+  .hero__copy--bridge .hero__heading--arc + .hero__body { margin-top: 0.35rem; }
+}
 
