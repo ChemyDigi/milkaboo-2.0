@@ -6,7 +6,7 @@ import { useLenis } from "@/components/SmoothScroll";
 
 const SOURCE_SECONDS = 53;
 
-/* the steps of the journey, written over the video around these moments; only the ones that hold freeze it */
+/* the steps of the journey, written over the video around these moments; the ones that hold freeze it */
 const STOPS = [
   {
     at: 3.4,
@@ -104,15 +104,23 @@ function letters(text: string) {
 
 /* scroll lengths, in % of the viewport */
 const PER_SECOND = 7.5; /* of video playback */
+/* the video plays this many times slower while a step's copy is up; 1 lets it run straight through */
+const SLOW = 1;
+/* seconds of video over which it changes pace, either way */
+const RAMP = 1;
 const MIN_LEAD = 40; /* the shortest run into a freeze */
-const HOLD = 16; /* frozen, until the next scroll erases the copy and the video carries on */
+const HOLD = 16; /* frozen, with its copy up, before the video carries on */
 /* scrolling down past a freeze stops the page here until its copy is fully written */
 const LOCK_PAST = 3;
-/* the next bit of scroll down erases the copy */
-const ERASE_PAST = 2;
-/* the copy of a step that doesn't hold shows while the video plays through it, in seconds of video */
+/* the copy of a step that doesn't hold is up while the video plays through it, in seconds of video */
 const SHOW_BEFORE = 1;
 const SHOW_FOR = 4;
+/* the stretch of video each step that doesn't hold is written over */
+const SPANS = STOPS.map((stop, i) => {
+  if ("hold" in stop) return null;
+  const next = STOPS[i + 1]?.at ?? Infinity;
+  return { a: stop.at - SHOW_BEFORE, b: Math.min(stop.at + SHOW_FOR, next - SHOW_BEFORE, SOURCE_SECONDS) };
+});
 
 export default function Hero() {
   const root = useRef<HTMLElement>(null);
@@ -169,7 +177,8 @@ export default function Hero() {
             lenisRef.current?.start();
           };
 
-          /* lay the scroll out: play to each freeze, hold on it, then play the rest */
+          /* lay the scroll out: the video runs at PER_SECOND, eases down to a crawl while each step's copy is up,
+             and freezes outright on the ones that hold */
           const playhead = { t: 0 };
           const tl = gsap.timeline({
             defaults: { ease: "none" },
@@ -177,26 +186,58 @@ export default function Hero() {
               target = playhead.t;
             },
           });
+          const CRAWL = PER_SECOND * SLOW;
+          let pos = 0; /* scroll laid out so far */
+          let from = 0; /* and the video time it reaches */
+          let slow = false;
+          /* play on to `to`, at `rate` % of scroll per second of video */
+          const play = (to: number, rate: number) => {
+            if (to <= from) return;
+            const length = (to - from) * rate;
+            tl.to(playhead, { t: to, duration: length }, pos);
+            pos += length;
+            from = to;
+          };
+          /* play on to `to`, with the pace changing steadily from one rate to the other */
+          const shift = (to: number, rate: number, toRate: number) => {
+            if (to <= from) return;
+            /* in seconds of video per % of scroll, which is what changes at a steady rate */
+            const a = 1 / rate;
+            const b = 1 / toRate;
+            const length = (2 * (to - from)) / (a + b);
+            tl.to(playhead, { t: to, duration: length, ease: (p) => (2 * a * p + (b - a) * p * p) / (a + b) }, pos);
+            pos += length;
+            from = to;
+          };
           const copies = section.querySelectorAll<HTMLElement>(".hero__copy");
-          let pos = 0;
-          let from = 0;
           const stops = STOPS.map((stop, i) => {
-            const held = "hold" in stop;
-            let enter: number;
-            let until: number;
+            const span = SPANS[i];
+            const held = !span;
+            /* where the scroll freezes the video on a held step's frame */
+            let freeze = 0;
             if (held) {
-              const lead = Math.max(MIN_LEAD, (stop.at - from) * PER_SECOND);
+              const lead = Math.max(MIN_LEAD, (stop.at - from) * (slow ? CRAWL : PER_SECOND));
               tl.to(playhead, { t: stop.at, duration: lead }, pos);
-              const freeze = pos + lead;
+              freeze = pos + lead;
               pos = freeze + HOLD;
               from = stop.at;
-              enter = freeze + LOCK_PAST;
-              until = enter + ERASE_PAST;
+              slow = false;
             } else {
-              /* the video plays straight through, so the copy rides along on the scroll between holds */
-              const next = STOPS[i + 1]?.at ?? Infinity;
-              enter = pos + (stop.at - SHOW_BEFORE - from) * PER_SECOND;
-              until = pos + (Math.min(stop.at + SHOW_FOR, next - SHOW_BEFORE) - from) * PER_SECOND;
+              const { a, b } = span;
+              if (slow) {
+                play(a, CRAWL);
+              } else {
+                play(a - RAMP, PER_SECOND);
+                shift(a, PER_SECOND, CRAWL);
+                slow = true;
+              }
+              play(b, CRAWL);
+              /* pick the pace back up, unless the next step's copy is due before it could */
+              const next = SPANS[i + 1]?.a ?? STOPS[i + 1]?.at ?? SOURCE_SECONDS;
+              if (next - b >= 2 * RAMP) {
+                shift(b + RAMP, CRAWL, PER_SECOND);
+                slow = false;
+              }
             }
 
             const el = copies[i];
@@ -218,7 +259,9 @@ export default function Hero() {
                 .from(q(".hero__eyebrow"), { autoAlpha: 0, x: -16, duration: 0.45 }, 0.15)
                 .from(q(".hero__step"), { autoAlpha: 0, scale: 0.4, duration: 0.5, ease: "back.out(2.4)" }, 0.3)
                 .from(
-                  q(".hero__char"),
+                  /* each letter's stroke and fill, which move as one; the wrapper stays put so that every stroke can
+                     sit under every fill */
+                  q(".hero__char > *"),
                   {
                     autoAlpha: 0,
                     y: "0.4em",
@@ -226,7 +269,7 @@ export default function Hero() {
                     rotate: -10,
                     duration: 0.45,
                     ease: "back.out(2.2)",
-                    stagger: 0.045,
+                    stagger: (i: number) => Math.floor(i / 2) * 0.045,
                   },
                   0.4,
                 )
@@ -239,8 +282,9 @@ export default function Hero() {
             let fade: gsap.core.Tween | undefined;
             return {
               held,
-              enter,
-              until,
+              at: stop.at,
+              span,
+              freeze,
               copy,
               /* armed again whenever the scroll goes back above the freeze */
               armed: true,
@@ -269,11 +313,14 @@ export default function Hero() {
               },
             };
           });
-          const rest = (SOURCE_SECONDS - from) * PER_SECOND;
+          /* and on to the end of the video */
+          const rest = Math.max(0, SOURCE_SECONDS - from) * (slow ? CRAWL : PER_SECOND);
           tl.to(playhead, { t: () => video.duration || SOURCE_SECONDS, duration: rest }, pos);
           const total = pos + rest;
+          /* when the lock last closed, so its copy needn't wait on a video that cannot seek */
+          let lockedAt = 0;
 
-          ScrollTrigger.create({
+          const trigger = ScrollTrigger.create({
             animation: tl,
             trigger: section,
             start: "top top",
@@ -287,33 +334,55 @@ export default function Hero() {
               const lenis = lenisRef.current;
               for (const stop of stops) {
                 if (!stop.held) continue;
-                if (at < stop.enter - LOCK_PAST) stop.armed = true;
-                if (stop.armed && lenis && self.direction > 0 && at >= stop.enter) {
+                if (at < stop.freeze) stop.armed = true;
+                const lock = stop.freeze + LOCK_PAST;
+                if (stop.armed && lenis && self.direction > 0 && at >= lock) {
                   stop.armed = false;
                   locked = true;
-                  lenis.scrollTo(self.start + (stop.enter / total) * (self.end - self.start), {
+                  lenis.scrollTo(self.start + (lock / total) * (self.end - self.start), {
                     immediate: true,
                     force: true,
                   });
                   lenis.stop();
-                  stops.forEach((s) => s.show(s === stop));
+                  lockedAt = gsap.ticker.time;
+                  stops.forEach((s) => {
+                    if (s !== stop) s.show(false);
+                  });
                   if (stop.copy.progress() === 1) unlock();
                   return;
                 }
               }
-              if (locked) return;
-              /* a held copy is only ever written in by the lock on the way down; leaving it, either way, removes it whole.
-                 the others come and go with the scroll, either way */
-              const speed = Math.abs(self.getVelocity());
-              stops.forEach((s) => {
-                const inside = at >= s.enter && at < s.until;
-                if (!inside) s.show(false, speed);
-                else if (!s.held) s.show(true);
-              });
             },
           });
 
+          /* the step whose frame is up: a held one while the timeline holds on its frame and the video has all but
+             reached it, the others while the frame is in their stretch, going either way. the lock on the way down
+             makes sure a held copy is written; and once any copy has begun it stays until it is written, unless
+             another's frame is up, so a fast scroll still shows it */
+          const sync = () => {
+            const speed = Math.abs(trigger.getVelocity());
+            const stalled = locked && gsap.ticker.time - lockedAt > 1.5;
+            const live = stops.find((s) =>
+              s.span
+                ? current >= s.span.a && current < s.span.b
+                : Math.abs(target - s.at) < 0.001 && (Math.abs(current - s.at) < 0.25 || stalled),
+            );
+            stops.forEach((s) => {
+              if (s === live) {
+                s.copy.timeScale(1);
+                s.show(true);
+              } else if (live || s.copy.progress() === 1) {
+                s.show(false, speed);
+              } else if (s.copy.isActive()) {
+                /* its frame has gone, so it finishes writing in a hurry */
+                s.copy.timeScale(3);
+              }
+            });
+          };
+          gsap.ticker.add(sync);
+
           return () => {
+            gsap.ticker.remove(sync);
             if (locked) unlock();
           };
         },

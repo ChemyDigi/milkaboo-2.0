@@ -211,14 +211,41 @@ html.nav-open { overflow: hidden; }
 /* each line's --fill-top / --fill-bottom come from TONES in Hero.tsx */
 .hero__nowrap { white-space: nowrap; }
 .hero__char { position: relative; display: inline-block; }
+/* the letter is painted twice. the wrapper never moves, so every stroke can sit under every fill and a letter's outline
+   never cuts into its neighbour; both layers get the same box, so they turn about the same point in an arched line.
+   the line box stops short of descenders (g, p, y): pad the painted area past them without moving the letter */
+.hero__char > * { display: inline-block; padding-block: 0.2em; margin-block: -0.2em; }
 .hero__char-stroke {
-  position: absolute; inset: 0; color: var(--plum);
-  -webkit-text-stroke: 0.16em var(--plum);
+  position: absolute; inset: 0; z-index: 0; color: var(--plum);
+  /* a ring of shadows rather than -webkit-text-stroke, whose mitred joins spike at the letters' corners */
+  text-shadow:
+    +0.080em +0.000em var(--plum),
+    +0.074em +0.031em var(--plum),
+    +0.057em +0.057em var(--plum),
+    +0.031em +0.074em var(--plum),
+    +0.000em +0.080em var(--plum),
+    -0.031em +0.074em var(--plum),
+    -0.057em +0.057em var(--plum),
+    -0.074em +0.031em var(--plum),
+    -0.080em +0.000em var(--plum),
+    -0.074em -0.031em var(--plum),
+    -0.057em -0.057em var(--plum),
+    -0.031em -0.074em var(--plum),
+    -0.000em -0.080em var(--plum),
+    +0.031em -0.074em var(--plum),
+    +0.057em -0.057em var(--plum),
+    +0.074em -0.031em var(--plum),
+    +0.042em +0.017em var(--plum),
+    +0.017em +0.042em var(--plum),
+    -0.017em +0.042em var(--plum),
+    -0.042em +0.017em var(--plum),
+    -0.042em -0.017em var(--plum),
+    -0.017em -0.042em var(--plum),
+    +0.017em -0.042em var(--plum),
+    +0.042em -0.017em var(--plum);
 }
 .hero__char-fill {
-  position: relative;
-  /* the line box stops short of descenders (g, p, y); pad the painted area past them without moving the letter */
-  display: inline-block; padding-block: 0.2em; margin-block: -0.2em;
+  position: relative; z-index: 1;
   background: linear-gradient(180deg, var(--fill-top, #fffdf7) 35%, var(--fill-bottom, #f5e9ff) 95%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
