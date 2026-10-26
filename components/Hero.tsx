@@ -6,11 +6,13 @@ import { useLenis } from "@/components/SmoothScroll";
 
 const SOURCE_SECONDS = 53;
 
-/* the frames the video holds on while a step of the journey is written over it */
+/* the steps of the journey, written over the video around these moments; only the ones that hold freeze it */
 const STOPS = [
   {
     at: 3.4,
     step: "01",
+    /* the cow pouring the milk: the one frame the video holds on */
+    hold: true,
     title: [
       { text: "Fresh Milk,", tone: "cream" },
       { text: "Magic Begins", tone: "pink" },
@@ -108,6 +110,9 @@ const HOLD = 16; /* frozen, until the next scroll erases the copy and the video 
 const LOCK_PAST = 3;
 /* the next bit of scroll down erases the copy */
 const ERASE_PAST = 2;
+/* the copy of a step that doesn't hold shows while the video plays through it, in seconds of video */
+const SHOW_BEFORE = 1;
+const SHOW_FOR = 4;
 
 export default function Hero() {
   const root = useRef<HTMLElement>(null);
@@ -176,11 +181,23 @@ export default function Hero() {
           let pos = 0;
           let from = 0;
           const stops = STOPS.map((stop, i) => {
-            const lead = Math.max(MIN_LEAD, (stop.at - from) * PER_SECOND);
-            tl.to(playhead, { t: stop.at, duration: lead }, pos);
-            const freeze = pos + lead;
-            pos = freeze + HOLD;
-            from = stop.at;
+            const held = "hold" in stop;
+            let enter: number;
+            let until: number;
+            if (held) {
+              const lead = Math.max(MIN_LEAD, (stop.at - from) * PER_SECOND);
+              tl.to(playhead, { t: stop.at, duration: lead }, pos);
+              const freeze = pos + lead;
+              pos = freeze + HOLD;
+              from = stop.at;
+              enter = freeze + LOCK_PAST;
+              until = enter + ERASE_PAST;
+            } else {
+              /* the video plays straight through, so the copy rides along on the scroll between holds */
+              const next = STOPS[i + 1]?.at ?? Infinity;
+              enter = pos + (stop.at - SHOW_BEFORE - from) * PER_SECOND;
+              until = pos + (Math.min(stop.at + SHOW_FOR, next - SHOW_BEFORE) - from) * PER_SECOND;
+            }
 
             const el = copies[i];
             const q = gsap.utils.selector(el);
@@ -221,9 +238,9 @@ export default function Hero() {
             let shown = false;
             let fade: gsap.core.Tween | undefined;
             return {
-              freeze,
-              lockAt: freeze + LOCK_PAST,
-              until: freeze + LOCK_PAST + ERASE_PAST,
+              held,
+              enter,
+              until,
               copy,
               /* armed again whenever the scroll goes back above the freeze */
               armed: true,
@@ -269,11 +286,12 @@ export default function Hero() {
               const at = self.progress * total;
               const lenis = lenisRef.current;
               for (const stop of stops) {
-                if (at < stop.freeze) stop.armed = true;
-                if (stop.armed && lenis && self.direction > 0 && at >= stop.lockAt) {
+                if (!stop.held) continue;
+                if (at < stop.enter - LOCK_PAST) stop.armed = true;
+                if (stop.armed && lenis && self.direction > 0 && at >= stop.enter) {
                   stop.armed = false;
                   locked = true;
-                  lenis.scrollTo(self.start + (stop.lockAt / total) * (self.end - self.start), {
+                  lenis.scrollTo(self.start + (stop.enter / total) * (self.end - self.start), {
                     immediate: true,
                     force: true,
                   });
@@ -284,10 +302,13 @@ export default function Hero() {
                 }
               }
               if (locked) return;
-              /* the copy is only ever written in by the lock on the way down; leaving it, either way, removes it whole */
+              /* a held copy is only ever written in by the lock on the way down; leaving it, either way, removes it whole.
+                 the others come and go with the scroll, either way */
               const speed = Math.abs(self.getVelocity());
               stops.forEach((s) => {
-                if (at < s.lockAt || at >= s.until) s.show(false, speed);
+                const inside = at >= s.enter && at < s.until;
+                if (!inside) s.show(false, speed);
+                else if (!s.held) s.show(true);
               });
             },
           });
