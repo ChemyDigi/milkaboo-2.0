@@ -16,11 +16,11 @@ export const gameConfig = {
 
   round: {
     /** seconds the player has to free the cup */
-    timeLimit: EASY ? 30 : 20,
+    timeLimit: EASY ? 30 : 25,
     /** seconds of continuous, threshold-level suction needed to go 0 → 100% */
-    fillSeconds: EASY ? 3 : 7,
-    /** progress lost per second while not sucking (0.16 = 16%/s): the ghost wraps back */
-    drainPerSec: EASY ? 0.04 : 0.16,
+    fillSeconds: EASY ? 2.5 : 5,
+    /** progress lost per second while not sucking (0.08 = 8%/s): the ghost wraps back */
+    drainPerSec: EASY ? 0.02 : 0.08,
     /** stronger suction peels faster, up to this multiple of the base rate */
     maxBoost: 1.5,
     /** how quickly extra loudness turns into boost: 1 + (rms / threshold − 1) × boostSlope */
@@ -31,14 +31,14 @@ export const gameConfig = {
 
   fightBack: {
     /** the ghost fights back at a random moment every minInterval–maxInterval seconds */
-    minInterval: EASY ? 8 : 3.5,
-    maxInterval: EASY ? 12 : 5.5,
+    minInterval: EASY ? 8 : 6,
+    maxInterval: EASY ? 12 : 9,
     /** …for this many seconds */
     duration: 1.4,
     /** while fighting, the suction threshold is this much higher… */
-    thresholdMultiplier: EASY ? 1.1 : 1.7,
+    thresholdMultiplier: EASY ? 1 : 1.35,
     /** …and the ghost wraps back this much faster */
-    drainMultiplier: EASY ? 1.2 : 2.2,
+    drainMultiplier: EASY ? 1.2 : 1.5,
     /** Android haptics pattern when it grips (ms on/off/on) */
     vibratePattern: [70, 40, 90] as number[],
   },
@@ -53,12 +53,12 @@ export const gameConfig = {
     /** quiet-room calibration window */
     calibrationMs: 2000,
     /** threshold = clamp(roomNoise × thresholdFactor, minThreshold, maxThreshold) */
-    thresholdFactor: EASY ? 1.6 : 2.6,
-    minThreshold: EASY ? 0.008 : 0.018,
+    thresholdFactor: EASY ? 1.2 : 2.2,
+    minThreshold: EASY ? 0.004 : 0.014,
     /** stops a noisy room from making the game impossible */
     maxThreshold: 0.14,
     /** 0–1. Breath is ~0.3–0.7 here, voice/whistle ~0.02–0.2. Raise it if shouting works, lower it if breath doesn't. */
-    minFlatness: EASY ? 0.18 : 0.28,
+    minFlatness: EASY ? 0.05 : 0.28,
     /** debounce so one noisy frame doesn't flip the state: must hold for attack, survives gaps up to release */
     attackMs: 60,
     releaseMs: 140,
@@ -126,19 +126,21 @@ export const gameConfig = {
   ghostSprite: {
     url: "/images/halloween/Mischievous%20Pink%20Rose%20Ghost.png",
     /** width × height of the picture in the scene (keep the image's aspect ratio) */
-    size: [2.46, 1.64] as [number, number],
+    size: [3.0, 2.0] as [number, number],
     /** where her face is in the image (0–1 from the left, 0–1 from the bottom); it's centred over the cup */
     face: [0.4, 0.59] as [number, number],
     /** her face is this far above the top of the lid; the picture sits this far in front of the cup's axis */
-    faceAboveLid: 0.35,
+    faceAboveLid: 0.42,
     depth: 1.2,
   },
 
   /** the painted cemetery behind the game; it always fills the screen, cropped like CSS object-fit: cover */
   backdrop: {
     url: "/images/halloween/Moonlit%20Gothic%20Cemetery%20Gate.png",
-    /** the point of the painting (0–1 from the left, 0–1 from the bottom) kept in view on narrow screens */
-    focus: [0.6, 0.5] as [number, number],
+    /** the part of the painting (0–1 from the left) kept in view on narrow screens */
+    focusX: 0.6,
+    /** the height of the painted ground the cup stands on (0–1 from the bottom of the painting) */
+    ground: 0.22,
     /** how far in front of the camera it hangs (scene units); everything else is closer */
     distance: 45,
     /** 0–1: how strongly the painting shows through the night haze (lower = softer, less contrast) */

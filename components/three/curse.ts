@@ -78,7 +78,7 @@ float ghostCover(vec3 p) {
 `;
 
 /**
- * Makes a cup material "haunted" wherever the ghost covers it: pale and milky, with her pink glow swirling
+ * Makes a cup material "haunted" wherever the ghost covers it: a pale ghostly sheen, with her pink glow swirling
  * through it and a stuttering light, and in its real colours where it's free. A glowing seam marks where
  * she's letting go. Works on any built-in material, so it also works on the real GLB's materials.
  * `shine` adds the glint that sweeps across the logo in the win reveal (needs a `map`).
@@ -121,9 +121,9 @@ export function applyCurse<T extends THREE.Material>(material: T, uniforms: Curs
         float cursed = smoothstep(-0.12, 0.05, cover);
         float lum = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
         float swirl = cvNoise(cupP * 2.5 + vec3(0.0, uTime * 0.35, uTime * 0.2));
-        vec3 milky = mix(vec3(lum), vec3(0.92, 0.86, 1.0), 0.45);
-        vec3 haunted = milky * (0.95 - 0.2 * uFlicker) + uHaunt * (0.12 + smoothstep(0.45, 0.85, swirl) * 0.3);
-        gl_FragColor.rgb = mix(gl_FragColor.rgb, haunted, cursed * 0.85);
+        vec3 milky = mix(gl_FragColor.rgb, vec3(lum) * vec3(0.92, 0.86, 1.0), 0.6);
+        vec3 haunted = milky * (1.0 - 0.2 * uFlicker) + uHaunt * (0.06 + smoothstep(0.45, 0.85, swirl) * 0.25);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, haunted, cursed * 0.55);
         float seam = (1.0 - smoothstep(0.0, 0.07, abs(cover))) * uEdge;
         gl_FragColor.rgb += mix(uSeam, uSeamGrip, uGrip) * seam * 1.4;
         gl_FragColor.rgb *= 1.0 + uWarm * 0.2;`,

@@ -61,7 +61,7 @@ void main() {
 
   // pulled toward the player: she stretches up and thins like taffy, the upper body first
   float pull = uStretch * (0.35 + 0.65 * uSuck);
-  c.y += pull * 0.32 * uv.y;
+  c.y += pull * 0.22 * uv.y;
   c.x *= 1.0 - pull * 0.1 * uv.y;
   c += vec2(sin(t * 47.0 + uv.y * 9.0), cos(t * 39.0 + uv.x * 7.0)) * 0.012 * uSuck;
 
@@ -76,7 +76,7 @@ void main() {
   vec3 p = uCenter + vec3(c, 0.0);
   // lunges at you, and rises off the cup as it's freed
   p += vec3(0.0, 0.1, 0.55) * uLunge;
-  p += vec3(0.0, 0.45, 0.6) * uLift + vec3(0.0, 0.0, 0.9) * pull * uv.y;
+  p += vec3(0.0, 0.35, 0.3) * uLift + vec3(0.0, 0.0, 0.45) * pull * uv.y;
 
   // the win: she spins and is sucked into the camera
   float e = uExit * uExit;

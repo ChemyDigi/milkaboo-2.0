@@ -40,6 +40,17 @@ export const softDot = () =>
     ctx.fillRect(0, 0, 128, 128);
   });
 
+/** a contact shadow: dark almost to its edge, then a quick soft falloff */
+export const contactShadow = () =>
+  canvasTexture("contact-shadow", 128, 128, (ctx) => {
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, "rgba(0,0,0,1)");
+    g.addColorStop(0.62, "rgba(0,0,0,0.9)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+  });
+
 /* ---------- the cup: condensation ---------- */
 
 function droplets(seed: number) {
@@ -104,112 +115,6 @@ export const condensationRoughness = () =>
     },
     { srgb: false, repeat: true },
   );
-
-/* ---------- the ground ---------- */
-
-/** dark, patchy earth */
-export const groundTexture = () =>
-  canvasTexture(
-    "ground",
-    256,
-    256,
-    (ctx) => {
-      ctx.fillStyle = "#1a1226";
-      ctx.fillRect(0, 0, 256, 256);
-      const rand = seeded(23);
-      for (let i = 0; i < 2600; i++) {
-        ctx.fillStyle = rand() < 0.5 ? "rgba(36,26,51,0.9)" : "rgba(14,9,22,0.9)";
-        const r = 1 + rand() * 4;
-        ctx.beginPath();
-        ctx.ellipse(rand() * 256, rand() * 256, r * (1 + rand()), r, rand() * 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      // dead grass
-      ctx.strokeStyle = "rgba(60,48,70,0.6)";
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 500; i++) {
-        const x = rand() * 256;
-        const y = rand() * 256;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + (rand() - 0.5) * 6, y - 4 - rand() * 6);
-        ctx.stroke();
-      }
-    },
-    { srgb: true, repeat: true },
-  );
-
-/** alpha for the ground around the cup: solid in the middle, fading out so the painted backdrop shows beyond */
-export const groundFade = () =>
-  canvasTexture(
-    "ground-fade",
-    128,
-    128,
-    (ctx) => {
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, 128, 128);
-      const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-      g.addColorStop(0, "#fff");
-      g.addColorStop(0.45, "#fff");
-      g.addColorStop(1, "#000");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, 128, 128);
-    },
-    { srgb: false },
-  );
-
-/* ---------- pumpkins ---------- */
-
-function drawPumpkinFace(ctx: CanvasRenderingContext2D, color: string) {
-  // the sphere's u = 0.25 faces +z, so the face is centred at x = 64 on a 256-wide map
-  ctx.fillStyle = color;
-  const tri = (a: [number, number], b: [number, number], c: [number, number]) => {
-    ctx.beginPath();
-    ctx.moveTo(...a);
-    ctx.lineTo(...b);
-    ctx.lineTo(...c);
-    ctx.closePath();
-    ctx.fill();
-  };
-  // angry slanted eyes and a nose
-  tri([34, 56], [62, 44], [58, 64]);
-  tri([94, 56], [66, 44], [70, 64]);
-  tri([64, 64], [57, 76], [71, 76]);
-  // a wide jagged grin
-  ctx.beginPath();
-  ctx.moveTo(26, 80);
-  [36, 44, 52, 60, 68, 76, 84, 92].forEach((x, i) => ctx.lineTo(x, i % 2 ? 80 : 88));
-  ctx.lineTo(102, 80);
-  ctx.quadraticCurveTo(64, 116, 26, 80);
-  ctx.fill();
-}
-
-export const pumpkinSkin = () =>
-  canvasTexture("pumpkin-skin", 256, 128, (ctx) => {
-    ctx.fillStyle = "#d9661a";
-    ctx.fillRect(0, 0, 256, 128);
-    ctx.strokeStyle = "rgba(100,30,0,0.45)";
-    ctx.lineWidth = 4;
-    for (let x = 0; x < 256; x += 32) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 128);
-      ctx.stroke();
-    }
-    const rand = seeded(9);
-    for (let i = 0; i < 300; i++) {
-      ctx.fillStyle = "rgba(80,30,0,0.25)";
-      ctx.fillRect(rand() * 256, rand() * 128, 1 + rand() * 3, 1 + rand() * 2);
-    }
-    drawPumpkinFace(ctx, "#1a0802");
-  });
-
-export const pumpkinGlow = () =>
-  canvasTexture("pumpkin-glow", 256, 128, (ctx) => {
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, 256, 128);
-    drawPumpkinFace(ctx, "#ffd36b");
-  });
 
 /** a bat silhouette, wings spread, about 1 unit wide */
 export function batGeometry(): THREE.ShapeGeometry {

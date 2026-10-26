@@ -2,18 +2,19 @@
 
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
+import { Sparkles, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { gameConfig } from "@/lib/gameConfig";
 import type { DeviceTier } from "@/hooks/useDeviceTier";
 import type { CurseUniforms } from "./curse";
-import Graveyard, { GROUND_Y } from "./Graveyard";
-import { batGeometry, groundFade, groundTexture, softDot } from "./textures";
+import { batGeometry, contactShadow, softDot } from "./textures";
 import type { Visual } from "./sceneState";
 
 const { colors, backdrop } = gameConfig;
 const HORIZON = new THREE.Color(colors.fog);
 const WARM_HORIZON = new THREE.Color("#4a2a44");
+/** the ground the cup stands on, in world space; the backdrop's painted ground is lined up with it */
+export const GROUND_Y = -1.5;
 useTexture.preload(backdrop.url);
 
 interface Props {
@@ -24,8 +25,8 @@ interface Props {
 }
 
 /**
- * The night: the painted cemetery backdrop, lightning, jack-o'-lanterns, drifting fog, the purple mist
- * leaking from under the ghost, and bats. The haze clears to a warm glow when the cup is freed.
+ * The night: the painted cemetery backdrop, lightning, drifting fog, the purple mist leaking from under
+ * the ghost, fireflies and bats. The haze clears to a warm glow when the cup is freed.
  */
 export default function Atmosphere({ visual, tier, reducedMotion, curse }: Props) {
   const scene = useThree((s) => s.scene);
@@ -52,8 +53,10 @@ export default function Atmosphere({ visual, tier, reducedMotion, curse }: Props
         <Backdrop curse={curse} />
       </Suspense>
       <Lightning visual={visual} curse={curse} reducedMotion={reducedMotion} />
-      <Ground visual={visual} />
-      <Graveyard visual={visual} tier={tier} reducedMotion={reducedMotion} />
+      <CupShadow visual={visual} />
+      {!low && (
+        <Sparkles count={30} scale={[10, 2.4, 5]} position={[0, GROUND_Y + 1.2, -2.5]} size={2.2} speed={0.25} color="#ffb3d9" opacity={0.6} />
+      )}
       <GroundMist visual={visual} count={low ? 4 : 7} reducedMotion={reducedMotion} />
       <FogPuffs visual={visual} count={low ? 4 : 8} reducedMotion={reducedMotion} />
       <Mist visual={visual} count={low ? 4 : 7} />
@@ -66,8 +69,9 @@ export default function Atmosphere({ visual, tier, reducedMotion, curse }: Props
 
 /**
  * The painted cemetery (`gameConfig.backdrop`), far behind everything. It always fills the screen like
- * CSS `object-fit: cover`, follows the camera with a touch of parallax, and lights up with the lightning
- * (the sky more than the ground) and the warm glow of the win.
+ * CSS `object-fit: cover` (never zoomed in beyond that), and is slid so its painted ground (`backdrop.ground`)
+ * comes as close as it can to the cup's base on screen: the cup stands on the painting. It lights up with
+ * the lightning (the sky more than the ground) and the warm glow of the win.
  */
 function Backdrop({ curse }: { curse: CurseUniforms }) {
   const map = useTexture(backdrop.url);
@@ -108,6 +112,7 @@ function Backdrop({ curse }: { curse: CurseUniforms }) {
   const forward = useMemo(() => new THREE.Vector3(), []);
   const right = useMemo(() => new THREE.Vector3(), []);
   const up = useMemo(() => new THREE.Vector3(), []);
+  const base = useMemo(() => new THREE.Vector3(), []);
   useFrame(({ camera, size }) => {
     const m = mesh.current;
     if (!m) return;
@@ -117,11 +122,15 @@ function Backdrop({ curse }: { curse: CurseUniforms }) {
     const d = backdrop.distance;
     const viewH = 2 * d * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
     const viewW = viewH * (size.width / Math.max(size.height, 1));
-    // cover the view (plus a margin for the parallax), then slide toward the focus point without showing an edge
-    const h = Math.max(viewH, viewW / imageAspect) * 1.06;
+    // where the cup's base is on screen, as a height on the backdrop's plane
+    cam.updateMatrixWorld();
+    const baseY = (base.set(0, GROUND_Y, 0).project(cam).y * viewH) / 2;
+    // just cover the view (a hair more for the parallax), never zoom in further; then slide the painted
+    // ground as close to the cup's base as the picture allows without showing its top or bottom edge
+    const h = Math.max(viewH, viewW / imageAspect) * 1.02;
+    const slideY = THREE.MathUtils.clamp(baseY - (backdrop.ground - 0.5) * h, -(h - viewH) / 2, (h - viewH) / 2);
     const w = h * imageAspect;
-    const slideX = THREE.MathUtils.clamp((0.5 - backdrop.focus[0]) * w - cam.position.x * 0.4, -(w - viewW) / 2, (w - viewW) / 2);
-    const slideY = THREE.MathUtils.clamp((0.5 - backdrop.focus[1]) * h, -(h - viewH) / 2, (h - viewH) / 2);
+    const slideX = THREE.MathUtils.clamp((0.5 - backdrop.focusX) * w - cam.position.x * 0.4, -(w - viewW) / 2, (w - viewW) / 2);
     cam.getWorldDirection(forward);
     right.setFromMatrixColumn(cam.matrixWorld, 0);
     up.setFromMatrixColumn(cam.matrixWorld, 1);
@@ -197,43 +206,32 @@ function Lightning({ visual, curse, reducedMotion }: { visual: Visual; curse: Cu
   );
 }
 
-/** A patch of dark earth under the cup that fades out into the backdrop's ground, and the cup's soft shadow. */
-function Ground({ visual }: { visual: Visual }) {
-  const { material, shadow } = useMemo(() => {
-    const map = groundTexture();
-    map.repeat.set(3, 2.4);
-    return {
-      material: new THREE.MeshStandardMaterial({
-        map,
-        alphaMap: groundFade(),
-        transparent: true,
-        depthWrite: false,
-        color: "#b4a4cc",
-        roughness: 1,
-      }),
+/** The cup's shadow on the painted ground: a wide soft one, and a dark contact shadow hugging the base. */
+function CupShadow({ visual }: { visual: Visual }) {
+  const { shadow, contact } = useMemo(
+    () => ({
       shadow: new THREE.MeshBasicMaterial({ map: softDot(), color: "#000", transparent: true, opacity: 0.85, depthWrite: false }),
-    };
-  }, []);
+      contact: new THREE.MeshBasicMaterial({ map: contactShadow(), transparent: true, opacity: 0.9, depthWrite: false }),
+    }),
+    [],
+  );
   useEffect(
     () => () => {
-      material.dispose();
       shadow.dispose();
+      contact.dispose();
     },
-    [material, shadow],
+    [shadow, contact],
   );
   useFrame(() => {
     shadow.opacity = 0.85 - visual.warm * 0.3;
+    contact.opacity = 0.9 - visual.warm * 0.25;
   });
   return (
     <>
-      <mesh material={material} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y, -1.5]} renderOrder={-5}>
-        <planeGeometry args={[16, 12]} />
-      </mesh>
-      {/* a wide soft shadow, and a dark contact shadow right under the base so the cup sits on the ground */}
-      <mesh material={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y + 0.01, 0.1]} scale={[3.4, 2.2, 1]}>
+      <mesh material={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y + 0.01, 0.15]} scale={[4.4, 3.0, 1]}>
         <planeGeometry />
       </mesh>
-      <mesh material={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y + 0.02, 0]} scale={[2.2, 1.6, 1]}>
+      <mesh material={contact} rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y + 0.02, 0.05]} scale={[2.3, 2.0, 1]}>
         <planeGeometry />
       </mesh>
     </>

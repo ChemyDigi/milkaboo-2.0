@@ -18,10 +18,10 @@ import Reveal from "./Reveal";
 import { EXIT_SECONDS, createVisual, type SceneMode, type SceneStateRef, type Visual } from "./sceneState";
 
 const { colors } = gameConfig;
-const LOOK_AT = new THREE.Vector3(0, 0.55, 0);
-/** what must stay in frame (scene units): the whole ghost plus a little air */
-const FRAME_HEIGHT = 5.5;
-const FRAME_WIDTH = 2.9;
+const LOOK_AT = new THREE.Vector3(0, 0.65, 0);
+/** what must stay in frame (scene units): the cup up close, with the ghost's head above it */
+const FRAME_HEIGHT = 5.6;
+const FRAME_WIDTH = 2.5;
 
 interface SceneProps {
   state: SceneStateRef;

@@ -5,6 +5,10 @@ import Image from "next/image";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { Gamepad2, Sparkles, X, ChevronRight, Award } from "lucide-react";
 import Game from "@/components/ui/Game";
+import JigsawPuzzle from "@/components/halloween/JigsawPuzzle";
+
+/** which game a flavour's ghost challenges you to */
+type GameKind = "suck" | "jigsaw";
 
 interface FlavorCard {
   id: string;
@@ -23,6 +27,7 @@ interface FlavorCard {
   borderGlow: string;
   badgeBg: string;
   ghostType: "apple" | "beast" | "custard" | "rose";
+  game: GameKind;
 }
 
 const FLAVORS: FlavorCard[] = [
@@ -41,6 +46,7 @@ const FLAVORS: FlavorCard[] = [
     borderGlow: "rgba(163, 255, 132, 0.65)",
     badgeBg: "rgba(34, 197, 94, 0.25)",
     ghostType: "apple",
+    game: "suck",
   },
   {
     id: "blackcurrant-beast",
@@ -57,6 +63,7 @@ const FLAVORS: FlavorCard[] = [
     borderGlow: "rgba(192, 132, 252, 0.7)",
     badgeBg: "rgba(168, 85, 247, 0.25)",
     ghostType: "beast",
+    game: "suck",
   },
   {
     id: "casper-custard",
@@ -73,6 +80,7 @@ const FLAVORS: FlavorCard[] = [
     borderGlow: "rgba(254, 215, 120, 0.7)",
     badgeBg: "rgba(245, 158, 11, 0.25)",
     ghostType: "custard",
+    game: "jigsaw",
   },
   {
     id: "wicked-rose",
@@ -89,6 +97,7 @@ const FLAVORS: FlavorCard[] = [
     borderGlow: "rgba(255, 124, 190, 0.75)",
     badgeBg: "rgba(244, 63, 94, 0.25)",
     ghostType: "rose",
+    game: "suck",
   },
 ];
 
@@ -404,7 +413,7 @@ function SpookyFlavorBackdrop() {
 }
 
 export default function HalloweenExperience() {
-  const [gameActive, setGameActive] = useState(false);
+  const [activeGame, setActiveGame] = useState<GameKind | null>(null);
   const [selectedFlavor, setSelectedFlavor] = useState<FlavorCard | null>(null);
 
   return (
@@ -560,7 +569,7 @@ export default function HalloweenExperience() {
               >
                 <button
                   type="button"
-                  onClick={() => setGameActive(true)}
+                  onClick={() => setActiveGame("suck")}
                   className="group relative inline-flex items-center justify-center gap-3.5 overflow-hidden rounded-full px-9 py-4 font-black tracking-wider uppercase text-[#241a33] transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(254,183,124,0.65)] hover:shadow-[0_0_60px_rgba(255,124,190,0.9)] cursor-pointer"
                   style={{
                     background: "linear-gradient(135deg, #fed778 0%, #feb273 50%, #ff8ab2 100%)",
@@ -904,7 +913,7 @@ export default function HalloweenExperience() {
                     type="button"
                     onClick={() => {
                       setSelectedFlavor(null);
-                      setGameActive(true);
+                      setActiveGame(selectedFlavor.game);
                     }}
                     className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 font-black text-[#241a33] transition-all hover:scale-103 cursor-pointer shadow-lg"
                     style={{
@@ -912,7 +921,7 @@ export default function HalloweenExperience() {
                     }}
                   >
                     <Gamepad2 className="h-5 w-5" />
-                    <span>Challenge Ghost & Win Free</span>
+                    <span>{selectedFlavor.game === "jigsaw" ? "Solve Casper's Puzzle" : "Challenge Ghost & Win Free"}</span>
                   </button>
                   <button
                     type="button"
@@ -929,10 +938,10 @@ export default function HalloweenExperience() {
       </AnimatePresence>
 
       {/* ========================================================================= */}
-      {/* FULLSCREEN GAME OVERLAY MODAL: 3D Microphone Challenge                     */}
+      {/* FULLSCREEN GAME OVERLAY MODAL: the flavour's game (mic challenge or jigsaw) */}
       {/* ========================================================================= */}
       <AnimatePresence>
-        {gameActive && (
+        {activeGame && (
           <motion.div
             className="fixed inset-0 z-50 flex flex-col bg-[#120a1f]"
             initial={{ opacity: 0 }}
@@ -943,7 +952,7 @@ export default function HalloweenExperience() {
             <div className="absolute top-4 left-4 z-50">
               <button
                 type="button"
-                onClick={() => setGameActive(false)}
+                onClick={() => setActiveGame(null)}
                 className="flex items-center gap-2 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-sm font-bold text-white/90 backdrop-blur-md hover:bg-black/80 hover:text-white transition-all shadow-lg cursor-pointer"
               >
                 <X className="h-4 w-4" />
@@ -951,9 +960,9 @@ export default function HalloweenExperience() {
               </button>
             </div>
 
-            {/* Live Free The Milkaboo Cup 3D Microphone Game */}
+            {/* Free The Milkaboo Cup (3D microphone game), or Casper Custard's jigsaw */}
             <div className="relative h-full w-full">
-              <Game />
+              {activeGame === "jigsaw" ? <JigsawPuzzle onExit={() => setActiveGame(null)} /> : <Game />}
             </div>
           </motion.div>
         )}

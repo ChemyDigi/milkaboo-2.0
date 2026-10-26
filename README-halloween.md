@@ -1,6 +1,6 @@
 # Free the Milkaboo Cup (Halloween game)
 
-A ghost has wrapped itself around a Milkaboo cup. The player sucks air in near the phone's microphone to peel it off. If they free the cup within 20 seconds, the server issues a one-time `BOO-XXXXX` code for a free cup, redeemable at the counter.
+A ghost has wrapped itself around a Milkaboo cup. The player sucks air in near the phone's microphone to peel it off. If they free the cup within 25 seconds, the server issues a one-time `BOO-XXXXX` code for a free cup, redeemable at the counter.
 
 The game lives at **`/halloween`** inside the Milkaboo site. It has its own full-screen layout (`app/(game)/`), so the site's header and smooth scrolling don't load on that page.
 
@@ -33,8 +33,7 @@ components/ui/*                   screens, HUD, mute button, ?debug panel, custo
 components/three/Scene.tsx        canvas, Director (per-frame shared uniforms), camera, lights, bloom
 components/three/Ghost.tsx        the ghost: her portrait draped over the front of the cup (shader in ghostMaterial.ts)
 components/three/Cup.tsx          real .glb or PlaceholderCup.tsx (built from the product photo); both get the "cursed" shader
-components/three/Atmosphere.tsx   painted backdrop, lightning, ground, fog layers, mist, bats, bat swarm
-components/three/Graveyard.tsx    jack-o'-lanterns and fireflies
+components/three/Atmosphere.tsx   painted backdrop (the cup stands on its ground), lightning, cup shadow, fog, mist, fireflies, bats
 components/three/Reveal.tsx       the win: flash, warm halo, sparkles
 hooks/useBreathDetector.ts        mic → { rms, flatness, isSucking, calibrate() }
 hooks/useGameLoop.ts              per-frame round loop (mic → engine → 3D, HUD at 10 Hz)
@@ -49,7 +48,7 @@ lib/server/*                      HMAC tokens, request helpers, storage interfac
 
 **One number drives the visuals.** The ghost and every cup material share a GLSL function, `ghostCover()` in `curse.ts`, that answers "is this point still covered?" for the current progress. The cup is haunted (pale and milky, with her pink glow swirling through it and a stuttering light) wherever it returns "covered", switches to its real colours wherever it returns "free", and a glowing pink seam (red while she fights back) runs along the border. The stages match the brief: 0–30% the ghost only stretches toward the player, 30–70% it peels from the top (straw and lid come free), 70–99% only the logo is still haunted, and at 100% it's sucked into the camera.
 
-**The look.** The ghost is the pink rose ghost from `public/images/halloween/Mischievous Pink Rose Ghost.png` (position and size in `gameConfig.ghostSprite`). Her portrait is draped over the front of the cup, her head above the lid, on a subdivided plane whose vertex shader animates it: her tail wisps drift, she bobs, tilts her head, twitches, lunges at the player, stretches toward them as they suck, rises off the cup as it peels, shudders and flushes red when she fights back, bounces with laughter when you lose, and spins into the camera at the win. Behind it: the painted cemetery `public/images/halloween/Moonlit Gothic Cemetery Gate.png` (`gameConfig.backdrop`), always filling the screen and lighting up with the lightning. Lightning strikes every 7–17 s (a bolt across the sky, the backdrop and ghost flare, the camera jolts, and a swarm of bats bursts across the screen). In front of the painting: ten jack-o'-lanterns on the ground and four floating (three casting light), two looping flocks of bats, fog, ground mist and fireflies. Film grain and a heavy vignette finish it. There is no thunder sound on purpose: the mic would hear a noisy rumble as breath.
+**The look.** The ghost is the pink rose ghost from `public/images/halloween/Mischievous Pink Rose Ghost.png` (position and size in `gameConfig.ghostSprite`). Her portrait is draped over the front of the cup, her head above the lid, on a subdivided plane whose vertex shader animates it: her tail wisps drift, she bobs, tilts her head, twitches, lunges at the player, stretches toward them as they suck, rises off the cup as it peels, shudders and flushes red when she fights back, bounces with laughter when you lose, and spins into the camera at the win. Behind it: the painted cemetery `public/images/halloween/Moonlit Gothic Cemetery Gate.png` (`gameConfig.backdrop`), always filling the screen without extra zoom, slid so its painted ground (`backdrop.ground`) is as close as possible under the cup, and lighting up with the lightning. Lightning strikes every 7–17 s (a bolt across the sky, the backdrop and ghost flare, the camera jolts, and a swarm of bats bursts across the screen). In front of the painting: the cup's shadow, two looping flocks of bats, fog, ground mist and fireflies. Film grain and a heavy vignette finish it. There is no thunder sound on purpose: the mic would hear a noisy rumble as breath.
 
 **No React renders during play.** The game loop writes plain numbers into a ref (`SceneState`). The 3D scene reads them in `useFrame`. Only the HUD re-renders, about 10 times a second.
 
@@ -141,7 +140,7 @@ Every material in the model automatically gets the cursed/free colour shader.
 
 - Device tiers: `low` (4 cores or fewer, or 3 GB RAM or less) gets no post-processing, no glass transmission, fewer bats and sparkles, and 1× resolution. `mid` (phones) gets bloom at up to 1.5× resolution. `high` gets 4× MSAA and up to 2× resolution. drei's `PerformanceMonitor` steps down a tier at runtime if frame rate drops.
 - Everything is low-poly: one instanced mesh for the bats and one for the pearls, sprites for fog and mist. The environment map is rendered once from three light panels (no HDR download). Sounds and the scene only load on `/halloween`.
-- `prefers-reduced-motion` turns off screen and camera shake and the camera sway, and slows the bats, pumpkins and cup spin.
+- `prefers-reduced-motion` turns off screen and camera shake and the camera sway, and slows the bats and the cup spin.
 
 ## Sounds
 
