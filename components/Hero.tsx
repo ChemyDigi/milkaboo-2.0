@@ -79,9 +79,9 @@ const STOPS = [
     place: "right",
     title: [
       { text: "Plucked from the", tone: "cream", small: true },
-      { text: "Boba Trees", tone: "boba" },
+      { text: "Blackcurrant Bushes", tone: "currant" },
     ],
-    body: "Plump, chewy pearls ripen on our magical boba trees, plucked fresh by the basketful and dropped into every cup of bubble tea.",
+    body: "Plump, juicy berries ripen on our magical blackcurrant bushes, plucked fresh by the basketful to steep a vibrant, tangy Blackcurrant Tea.",
   },
 ] as const;
 
@@ -93,6 +93,7 @@ const TONES = {
   rose: ["#fff4f6", "#ff8fab"],
   custard: ["#fff1b8", "#f2a51c"],
   boba: ["#fff4e6", "#d08c52"],
+  currant: ["#fceeff", "#8a3ab9"],
 } as const;
 
 /* a line's words as letters, each with its place along the line from -1 (first) to 1 (last) */
@@ -147,7 +148,7 @@ export default function Hero() {
         video
           .play()
           .then(() => video.pause())
-          .catch(() => {});
+          .catch(() => { });
       };
       const primeEvents = ["touchstart", "pointerdown", "wheel", "keydown"] as const;
       primeEvents.forEach((e) => window.addEventListener(e, prime, { once: true, passive: true }));
