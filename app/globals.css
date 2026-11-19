@@ -168,8 +168,10 @@ html.nav-open { overflow: hidden; }
 .hero__media {
   position: absolute; inset: 0; height: 100lvh; overflow: hidden; z-index: 0;
   background: var(--surface);
+  will-change: transform;
+  transform: translateZ(0);
 }
-.hero__video { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; background: var(--surface); }
+.hero__video { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; background: var(--surface); will-change: transform; transform: translateZ(0); }
 
 
 /* ---------- hero copy: written over the frozen frame, step 01 of the journey ---------- */

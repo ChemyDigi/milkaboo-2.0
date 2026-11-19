@@ -5,6 +5,8 @@ import { gsap, useGSAP } from "@/lib/gsap";
 import { useLenis } from "@/components/SmoothScroll";
 
 const LINKS = [
+  { href: "#top", label: "Home" },
+  { href: "#journey", label: "The Journey" },
   { href: "#menu", label: "Menu" },
 ];
 

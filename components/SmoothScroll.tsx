@@ -29,9 +29,11 @@ export function useLenis() {
 export default function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
     const lenis = new Lenis({
-      lerp: 0.1,
+      lerp: 0.065,
+      wheelMultiplier: 0.9,
+      touchMultiplier: 1.4,
       smoothWheel: true,
-      syncTouch: false,
+      syncTouch: true,
       autoRaf: false,
       anchors: true,
       respectReducedMotion: true,
