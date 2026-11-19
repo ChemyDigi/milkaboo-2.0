@@ -1,7 +1,3 @@
-"use client";
-
-import Image from "next/image";
-
 export default function Footer() {
   return (
     <footer className="w-full bg-[#241a33] text-white py-16 px-4 sm:px-8 border-t border-white/10">
@@ -32,7 +28,7 @@ export default function Footer() {
         </div>
 
         <div className="font-['Lato',sans-serif] text-[11px] text-white/40">
-          © {new Date().getFullYear()} Milka Boo. All rights reserved.
+          © 2026 Milka Boo. All rights reserved.
         </div>
       </div>
     </footer>
