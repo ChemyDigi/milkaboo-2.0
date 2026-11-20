@@ -4,117 +4,155 @@ import { useEffect, useRef } from "react";
 import { useLenis } from "@/components/SmoothScroll";
 
 /* ============================================================================
- * CONFIGURATION — swap video source or copy here
+ * CONFIGURATION — Synchronized 2D Video Tracks (all-keyframe 1080p MP4s)
  * ========================================================================== */
-// Fast all-keyframe 1080p MP4 generated directly from Home_Page_Video.mp4
-// for instantaneous, lag-free 60fps mouse-scrubbing.
-const VIDEO_SRC = "/video/hero-cow.mp4"; 
+const VIDEOS = {
+  // Continuous left-to-right gaze sweep: 0.0s (Far Left) -> 1.4s (Center) -> 2.55s (Far Right)
+  mid: "/video/cow-hero-mid.mp4",
+  // Looking UP towards the sky/awning: 0.0s (Center) -> 1.6s (High Up)
+  up: "/video/cow-hero-up.mp4",
+  // Looking DOWN towards the boba cups: 0.0s (Center) -> 1.2s (Down)
+  down: "/video/cow-hero-down.mp4",
+} as const;
 
-const LERP_FACTOR = 0.12; // Smoothness for requestAnimationFrame lerp (0..1)
+const LERP_FACTOR = 0.14; // Smoothness for requestAnimationFrame lerp (0..1)
 const SEEK_EPSILON = 0.01; // Minimum time delta (seconds) required to trigger seek
 
-const HEADLINE = "Milka Boo"; // [YOUR_HEADLINE_HERE]
+const HEADLINE = "Milka Boo";
 const SUBHEADING =
-  "Creamy fresh milk & handcrafted boba, shaken to order with magic."; // [YOUR_SUBHEADING_HERE]
+  "Creamy fresh milk & handcrafted boba, shaken to order with magic.";
 
 export default function Hero() {
   const lenis = useLenis();
   const sectionRef = useRef<HTMLElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const midRef = useRef<HTMLVideoElement>(null);
+  const upRef = useRef<HTMLVideoElement>(null);
+  const downRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
-    const video = videoRef.current;
-    if (!section || !video) return;
+    const vMid = midRef.current;
+    const vUp = upRef.current;
+    const vDown = downRef.current;
+    if (!section || !vMid || !vUp || !vDown) return;
 
-    // No autoplay — keep video paused until controlled by mouse movement
-    video.muted = true;
-    video.pause();
+    const tracks = [
+      { el: vMid, initialized: false, isSeeking: false, queuedTime: null as number | null },
+      { el: vUp, initialized: false, isSeeking: false, queuedTime: null as number | null },
+      { el: vDown, initialized: false, isSeeking: false, queuedTime: null as number | null },
+    ];
 
-    let isSeeking = false;
-    let queuedTime: number | null = null;
-    let targetTime = 0;
-    let smoothTime = 0;
-    let isInitialized = false;
+    // No autoplay — keep all video tracks paused
+    for (const tr of tracks) {
+      tr.el.muted = true;
+      tr.el.pause();
+    }
+
+    // Normalized cursor state inside hero bounding box (0.5, 0.5 = dead center)
+    let targetX = 0.5;
+    let targetY = 0.5;
+    let smoothX = 0.5;
+    let smoothY = 0.5;
+    let activeRow: "up" | "mid" | "down" = "mid";
     let isVisible = true;
     let rafId = 0;
 
-    const clampTime = (t: number) => {
-      const dur = video.duration;
+    // Discrete track visibility with zero ghosting
+    const applyActiveRow = (row: "up" | "mid" | "down") => {
+      vUp.style.opacity = row === "up" ? "1" : "0";
+      vMid.style.opacity = row === "mid" ? "1" : "0";
+      vDown.style.opacity = row === "down" ? "1" : "0";
+    };
+    applyActiveRow("mid");
+
+    const clampTime = (el: HTMLVideoElement, time: number) => {
+      const dur = el.duration;
       if (!Number.isFinite(dur) || dur <= 0) return 0;
-      return Math.max(0, Math.min(dur - 0.02, t));
+      return Math.max(0, Math.min(dur - 0.02, time));
     };
 
-    // Safe seek mechanism: prevents seek-flooding using video.seeking & onSeeked queue
-    const requestSeek = (time: number) => {
-      if (video.readyState < 2) return;
-      const desired = clampTime(time);
-      if (Math.abs(desired - video.currentTime) <= SEEK_EPSILON) return;
+    const requestSeek = (tr: (typeof tracks)[number], desiredTime: number) => {
+      const { el } = tr;
+      if (el.readyState < 2) return;
+      const target = clampTime(el, desiredTime);
+      if (Math.abs(target - el.currentTime) <= SEEK_EPSILON) return;
 
-      if (video.seeking || isSeeking) {
-        queuedTime = desired;
+      if (el.seeking || tr.isSeeking) {
+        tr.queuedTime = target;
         return;
       }
 
-      isSeeking = true;
-      queuedTime = null;
-      video.currentTime = desired;
+      tr.isSeeking = true;
+      tr.queuedTime = null;
+      el.currentTime = target;
     };
 
-    const handleSeeked = () => {
-      isSeeking = false;
-      if (queuedTime !== null) {
-        const nextTime = queuedTime;
-        queuedTime = null;
-        requestSeek(nextTime);
+    const initTrack = (tr: (typeof tracks)[number]) => {
+      const { el } = tr;
+      if (!Number.isFinite(el.duration) || el.duration <= 0) return;
+      el.pause();
+      if (!tr.initialized && el.readyState >= 2) {
+        tr.initialized = true;
+        if (el === vMid) {
+          requestSeek(tr, el.duration * 0.54); // center smiling pose
+        } else {
+          requestSeek(tr, 0);
+        }
       }
     };
 
-    const handleVideoReady = () => {
-      if (!Number.isFinite(video.duration) || video.duration <= 0) return;
-      video.pause();
-      if (!isInitialized && video.readyState >= 2) {
-        isInitialized = true;
-        // Start near center of the video
-        targetTime = video.duration * 0.5;
-        smoothTime = targetTime;
-        requestSeek(smoothTime);
-      }
-    };
+    const cleanups: (() => void)[] = [];
+    for (const tr of tracks) {
+      const onInit = () => initTrack(tr);
+      const onSeeked = () => {
+        tr.isSeeking = false;
+        if (tr.queuedTime !== null) {
+          const next = tr.queuedTime;
+          tr.queuedTime = null;
+          requestSeek(tr, next);
+        }
+      };
+      tr.el.addEventListener("loadedmetadata", onInit);
+      tr.el.addEventListener("loadeddata", onInit);
+      tr.el.addEventListener("canplay", onInit);
+      tr.el.addEventListener("seeked", onSeeked);
 
-    // Scoped strictly to the hero section's bounding box:
-    // Mouse at far left = start (frame 0)
-    // Mouse at far right = end (last frame)
+      if (tr.el.readyState >= 2) initTrack(tr);
+
+      cleanups.push(() => {
+        tr.el.removeEventListener("loadedmetadata", onInit);
+        tr.el.removeEventListener("loadeddata", onInit);
+        tr.el.removeEventListener("canplay", onInit);
+        tr.el.removeEventListener("seeked", onSeeked);
+      });
+    }
+
+    // Scoped strictly to the hero bounding box:
+    // Mouse far left (0) -> cow looks left at mouse
+    // Mouse center (0.5) -> cow looks dead center at mouse
+    // Mouse far right (1.0) -> cow looks right at mouse
+    // Mouse top -> cow looks up
+    // Mouse bottom -> cow looks down
     const handleMouseMove = (e: MouseEvent) => {
       const rect = section.getBoundingClientRect();
-      const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
-      const dur = video.duration;
-      if (Number.isFinite(dur) && dur > 0) {
-        targetTime = normX * dur;
-      }
+      targetX = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
+      targetY = Math.max(0, Math.min(1, (e.clientY - rect.top) / Math.max(1, rect.height)));
     };
 
-    // Touch support: drag across hero banner to scrub
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 0) return;
       const touch = e.touches[0];
       const rect = section.getBoundingClientRect();
-      const normX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / Math.max(1, rect.width)));
-      const dur = video.duration;
-      if (Number.isFinite(dur) && dur > 0) {
-        targetTime = normX * dur;
-      }
+      targetX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / Math.max(1, rect.width)));
+      targetY = Math.max(0, Math.min(1, (touch.clientY - rect.top) / Math.max(1, rect.height)));
     };
 
-    // Gently glide back toward center when cursor leaves hero section
+    // Gently return gaze to center when cursor leaves hero section
     const handleMouseLeave = () => {
-      const dur = video.duration;
-      if (Number.isFinite(dur) && dur > 0) {
-        targetTime = dur * 0.5;
-      }
+      targetX = 0.5;
+      targetY = 0.5;
     };
 
-    // IntersectionObserver pauses rAF when hero is scrolled out of viewport
     const io = new IntersectionObserver(
       ([entry]) => {
         isVisible = entry.isIntersecting;
@@ -123,45 +161,69 @@ export default function Hero() {
     );
     io.observe(section);
 
-    // Smooth lerp loop via requestAnimationFrame
+    // 60fps rAF lerp loop
     const tick = () => {
-      if (isVisible && isInitialized) {
-        const dt = targetTime - smoothTime;
-        if (Math.abs(dt) > 0.005) {
-          smoothTime += dt * LERP_FACTOR;
+      if (isVisible) {
+        const dx = targetX - smoothX;
+        const dy = targetY - smoothY;
+
+        if (Math.abs(dx) > 0.002) smoothX += dx * LERP_FACTOR;
+        else smoothX = targetX;
+
+        if (Math.abs(dy) > 0.002) smoothY += dy * LERP_FACTOR;
+        else smoothY = targetY;
+
+        // Vertical hysteresis row switching (clean discrete layer selection = ZERO ghosting)
+        let nextRow: "up" | "mid" | "down" = activeRow;
+        if (activeRow === "up") {
+          if (smoothY > 0.40) nextRow = smoothY > 0.65 ? "down" : "mid";
+        } else if (activeRow === "down") {
+          if (smoothY < 0.60) nextRow = smoothY < 0.35 ? "up" : "mid";
         } else {
-          smoothTime = targetTime;
+          if (smoothY < 0.32) nextRow = "up";
+          else if (smoothY > 0.68) nextRow = "down";
         }
-        requestSeek(smoothTime);
+
+        if (nextRow !== activeRow) {
+          activeRow = nextRow;
+          applyActiveRow(activeRow);
+        }
+
+        // 1. MID track: currentTime directly maps to smoothX
+        // Left (0) = 0.0s (Far Left), Center (0.5) = 1.38s (Center), Right (1.0) = 2.54s (Far Right)
+        if (Number.isFinite(vMid.duration) && vMid.duration > 0) {
+          const midTargetTime = smoothX * vMid.duration;
+          requestSeek(tracks[0], midTargetTime);
+        }
+
+        // 2. UP track: tilts up as cursor moves towards top
+        if (Number.isFinite(vUp.duration) && vUp.duration > 0) {
+          const upFactor = Math.max(0, Math.min(1, (0.35 - smoothY) / 0.35));
+          requestSeek(tracks[1], upFactor * vUp.duration);
+        }
+
+        // 3. DOWN track: tilts down as cursor moves towards bottom
+        if (Number.isFinite(vDown.duration) && vDown.duration > 0) {
+          const downFactor = Math.max(0, Math.min(1, (smoothY - 0.65) / 0.35));
+          requestSeek(tracks[2], downFactor * vDown.duration);
+        }
       }
+
       rafId = requestAnimationFrame(tick);
     };
-
-    video.addEventListener("loadedmetadata", handleVideoReady);
-    video.addEventListener("loadeddata", handleVideoReady);
-    video.addEventListener("canplay", handleVideoReady);
-    video.addEventListener("seeked", handleSeeked);
 
     section.addEventListener("mousemove", handleMouseMove, { passive: true });
     section.addEventListener("touchmove", handleTouchMove, { passive: true });
     section.addEventListener("mouseleave", handleMouseLeave);
-
-    if (video.readyState >= 2) {
-      handleVideoReady();
-    }
-
     rafId = requestAnimationFrame(tick);
 
     return () => {
       cancelAnimationFrame(rafId);
       io.disconnect();
-      video.removeEventListener("loadedmetadata", handleVideoReady);
-      video.removeEventListener("loadeddata", handleVideoReady);
-      video.removeEventListener("canplay", handleVideoReady);
-      video.removeEventListener("seeked", handleSeeked);
       section.removeEventListener("mousemove", handleMouseMove);
       section.removeEventListener("touchmove", handleTouchMove);
       section.removeEventListener("mouseleave", handleMouseLeave);
+      cleanups.forEach((fn) => fn());
     };
   }, []);
 
@@ -183,16 +245,43 @@ export default function Hero() {
       aria-label="Milka Boo Hero"
       className="relative w-full min-h-[100svh] flex flex-col justify-end overflow-hidden bg-[#241a33] select-none"
     >
-      {/* Mouse-Scrubbed Background Video (no autoplay, object-fit: cover, all-keyframe 1080p MP4) */}
+      {/* 2D Mouse-Scrubbed Video Stack (Level, Up, Down — all-keyframe 1080p MP4s) */}
+      {/* Base Level Track: Left (0.0s) -> Center (1.4s) -> Right (2.55s) */}
       <video
-        ref={videoRef}
-        src={VIDEO_SRC}
+        ref={midRef}
+        src={VIDEOS.mid}
         muted
         playsInline
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+      />
+
+      {/* Upward Gaze Track (Tilts Up towards Awning/Sky) */}
+      <video
+        ref={upRef}
+        src={VIDEOS.up}
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        tabIndex={-1}
+        style={{ opacity: 0 }}
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none will-change-[opacity]"
+      />
+
+      {/* Downward Gaze Track (Tilts Down towards Boba Drinks) */}
+      <video
+        ref={downRef}
+        src={VIDEOS.down}
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        tabIndex={-1}
+        style={{ opacity: 0 }}
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none will-change-[opacity]"
       />
 
       {/* Subtle dark gradient overlay so foreground copy stays readable */}
@@ -205,7 +294,7 @@ export default function Hero() {
         }}
       />
 
-      {/* Foreground text layer (left-aligned along the lower edge so the cow & cart remain clear) */}
+      {/* Foreground text layer */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 pb-10 sm:pb-14 pt-[var(--header-h)] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
         <div className="max-w-xl">
           <h1 className="font-bherisi text-5xl sm:text-7xl leading-[0.95] text-white drop-shadow-[0_4px_18px_rgba(20,12,34,0.6)]">
