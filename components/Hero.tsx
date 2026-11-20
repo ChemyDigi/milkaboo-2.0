@@ -4,16 +4,14 @@ import { useEffect, useRef } from "react";
 import { useLenis } from "@/components/SmoothScroll";
 
 /* ============================================================================
- * CONFIGURATION — swap video sources or copy here
+ * CONFIGURATION — swap video source or copy here
  * ========================================================================== */
-const VIDEOS = {
-  up: "/video/cow-hero-up.mp4",
-  mid: "/video/cow-hero-mid.mp4",
-  down: "/video/cow-hero-down.mp4",
-} as const;
+// Fast all-keyframe 1080p MP4 generated directly from Home_Page_Video.mp4
+// for instantaneous, lag-free 60fps mouse-scrubbing.
+const VIDEO_SRC = "/video/hero-cow.mp4"; 
 
-const LERP_FACTOR = 0.15; // Smoothness for requestAnimationFrame lerp (0..1)
-const SEEK_EPSILON = 0.008; // Minimum time delta (seconds) required to trigger a seek
+const LERP_FACTOR = 0.12; // Smoothness for requestAnimationFrame lerp (0..1)
+const SEEK_EPSILON = 0.01; // Minimum time delta (seconds) required to trigger seek
 
 const HEADLINE = "Milka Boo"; // [YOUR_HEADLINE_HERE]
 const SUBHEADING =
@@ -22,174 +20,148 @@ const SUBHEADING =
 export default function Hero() {
   const lenis = useLenis();
   const sectionRef = useRef<HTMLElement>(null);
-  const upRef = useRef<HTMLVideoElement>(null);
-  const midRef = useRef<HTMLVideoElement>(null);
-  const downRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
-    const vUp = upRef.current;
-    const vMid = midRef.current;
-    const vDown = downRef.current;
-    if (!section || !vUp || !vMid || !vDown) return;
+    const video = videoRef.current;
+    if (!section || !video) return;
 
-    const tracks = [
-      { el: vMid, initialized: false, seekQueued: false },
-      { el: vUp, initialized: false, seekQueued: false },
-      { el: vDown, initialized: false, seekQueued: false },
-    ];
+    // No autoplay — keep video paused until controlled by mouse movement
+    video.muted = true;
+    video.pause();
 
-    // No autoplay — keep all three videos paused until controlled by mouse movement
-    for (const tr of tracks) {
-      tr.el.muted = true;
-      tr.el.pause();
-    }
-
-    // Normalized 2D cursor state inside hero bounding box (0.5, 0.5 = dead center)
-    let targetX = 0.5;
-    let targetY = 0.5;
-    let smoothX = 0.5;
-    let smoothY = 0.5;
-    let activeRow: "up" | "mid" | "down" = "mid";
+    let isSeeking = false;
+    let queuedTime: number | null = null;
+    let targetTime = 0;
+    let smoothTime = 0;
+    let isInitialized = false;
     let isVisible = true;
     let rafId = 0;
 
-    const applyActiveRow = (row: "up" | "mid" | "down") => {
-      vUp.style.opacity = row === "up" ? "1" : "0";
-      vMid.style.opacity = row === "mid" ? "1" : "0";
-      vDown.style.opacity = row === "down" ? "1" : "0";
-    };
-    applyActiveRow("mid");
-
-    const clampTime = (el: HTMLVideoElement, normX: number) => {
-      const dur = el.duration;
+    const clampTime = (t: number) => {
+      const dur = video.duration;
       if (!Number.isFinite(dur) || dur <= 0) return 0;
-      return Math.max(0, Math.min(dur - 0.02, normX * dur));
+      return Math.max(0, Math.min(dur - 0.02, t));
     };
 
-    // Safe seek per video track: uses native el.seeking + onSeeked queue to prevent seek-flooding
-    const flushTrackSeek = (tr: (typeof tracks)[number]) => {
-      const { el } = tr;
-      if (el.readyState < 2) return;
-      const desired = clampTime(el, smoothX);
-      if (Math.abs(desired - el.currentTime) <= SEEK_EPSILON) return;
+    // Safe seek mechanism: prevents seek-flooding using video.seeking & onSeeked queue
+    const requestSeek = (time: number) => {
+      if (video.readyState < 2) return;
+      const desired = clampTime(time);
+      if (Math.abs(desired - video.currentTime) <= SEEK_EPSILON) return;
 
-      if (el.seeking) {
-        tr.seekQueued = true;
+      if (video.seeking || isSeeking) {
+        queuedTime = desired;
         return;
       }
 
-      tr.seekQueued = false;
-      el.currentTime = desired;
+      isSeeking = true;
+      queuedTime = null;
+      video.currentTime = desired;
     };
 
-    const initTrack = (tr: (typeof tracks)[number]) => {
-      const { el } = tr;
-      const dur = el.duration;
-      if (!Number.isFinite(dur) || dur <= 0) return;
-      el.pause();
-      if (!tr.initialized && el.readyState >= 2) {
-        tr.initialized = true;
-        el.currentTime = clampTime(el, smoothX);
+    const handleSeeked = () => {
+      isSeeking = false;
+      if (queuedTime !== null) {
+        const nextTime = queuedTime;
+        queuedTime = null;
+        requestSeek(nextTime);
       }
     };
 
-    // Attach metadata, data, and seeked listeners for each of the 3 directional tracks
-    const cleanups: (() => void)[] = [];
-    for (const tr of tracks) {
-      const onInit = () => initTrack(tr);
-      const onSeeked = () => {
-        if (tr.seekQueued) {
-          tr.seekQueued = false;
-          flushTrackSeek(tr);
-        } else {
-          flushTrackSeek(tr);
-        }
-      };
-      tr.el.addEventListener("loadedmetadata", onInit);
-      tr.el.addEventListener("loadeddata", onInit);
-      tr.el.addEventListener("seeked", onSeeked);
-      if (tr.el.readyState >= 2) initTrack(tr);
-
-      cleanups.push(() => {
-        tr.el.removeEventListener("loadedmetadata", onInit);
-        tr.el.removeEventListener("loadeddata", onInit);
-        tr.el.removeEventListener("seeked", onSeeked);
-      });
-    }
+    const handleVideoReady = () => {
+      if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+      video.pause();
+      if (!isInitialized && video.readyState >= 2) {
+        isInitialized = true;
+        // Start near center of the video
+        targetTime = video.duration * 0.5;
+        smoothTime = targetTime;
+        requestSeek(smoothTime);
+      }
+    };
 
     // Scoped strictly to the hero section's bounding box:
-    // X maps 0..1 -> Left..Center..Right (video.currentTime)
-    // Y maps 0..1 -> Up..Level..Down (crossfades UP / MID / DOWN tracks)
+    // Mouse at far left = start (frame 0)
+    // Mouse at far right = end (last frame)
     const handleMouseMove = (e: MouseEvent) => {
       const rect = section.getBoundingClientRect();
-      targetX = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
-      targetY = Math.max(0, Math.min(1, (e.clientY - rect.top) / Math.max(1, rect.height)));
+      const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
+      const dur = video.duration;
+      if (Number.isFinite(dur) && dur > 0) {
+        targetTime = normX * dur;
+      }
     };
 
-    // Gently glide gaze back to center when cursor leaves the hero bounding box
+    // Touch support: drag across hero banner to scrub
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      const touch = e.touches[0];
+      const rect = section.getBoundingClientRect();
+      const normX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / Math.max(1, rect.width)));
+      const dur = video.duration;
+      if (Number.isFinite(dur) && dur > 0) {
+        targetTime = normX * dur;
+      }
+    };
+
+    // Gently glide back toward center when cursor leaves hero section
     const handleMouseLeave = () => {
-      targetX = 0.5;
-      targetY = 0.5;
+      const dur = video.duration;
+      if (Number.isFinite(dur) && dur > 0) {
+        targetTime = dur * 0.5;
+      }
     };
 
-    // Pause rAF loop while hero is scrolled off-screen so page scrolling stays silky smooth
+    // IntersectionObserver pauses rAF when hero is scrolled out of viewport
     const io = new IntersectionObserver(
       ([entry]) => {
         isVisible = entry.isIntersecting;
       },
-      { threshold: 0 },
+      { threshold: 0 }
     );
     io.observe(section);
 
-    // Smooth 2D lerp loop via requestAnimationFrame
+    // Smooth lerp loop via requestAnimationFrame
     const tick = () => {
-      if (isVisible) {
-        const dx = targetX - smoothX;
-        const dy = targetY - smoothY;
-
-        if (Math.abs(dx) > 0.0004) smoothX += dx * LERP_FACTOR;
-        else smoothX = targetX;
-
-        if (Math.abs(dy) > 0.0004) smoothY += dy * LERP_FACTOR;
-        else smoothY = targetY;
-
-        // Crisp single-row selection with subtle hysteresis (ZERO double-head ghosting!)
-        let nextRow: "up" | "mid" | "down" = activeRow;
-        if (activeRow === "up") {
-          if (smoothY > 0.37) nextRow = smoothY > 0.67 ? "down" : "mid";
-        } else if (activeRow === "down") {
-          if (smoothY < 0.63) nextRow = smoothY < 0.33 ? "up" : "mid";
+      if (isVisible && isInitialized) {
+        const dt = targetTime - smoothTime;
+        if (Math.abs(dt) > 0.005) {
+          smoothTime += dt * LERP_FACTOR;
         } else {
-          if (smoothY < 0.33) nextRow = "up";
-          else if (smoothY > 0.67) nextRow = "down";
+          smoothTime = targetTime;
         }
-
-        if (nextRow !== activeRow) {
-          activeRow = nextRow;
-          applyActiveRow(activeRow);
-        }
-
-        // Keep horizontal currentTime smoothly scrubbed across all tracks in lockstep
-        for (const tr of tracks) {
-          if (!tr.initialized && tr.el.readyState >= 2) initTrack(tr);
-          flushTrackSeek(tr);
-        }
+        requestSeek(smoothTime);
       }
-
       rafId = requestAnimationFrame(tick);
     };
 
+    video.addEventListener("loadedmetadata", handleVideoReady);
+    video.addEventListener("loadeddata", handleVideoReady);
+    video.addEventListener("canplay", handleVideoReady);
+    video.addEventListener("seeked", handleSeeked);
+
     section.addEventListener("mousemove", handleMouseMove, { passive: true });
+    section.addEventListener("touchmove", handleTouchMove, { passive: true });
     section.addEventListener("mouseleave", handleMouseLeave);
+
+    if (video.readyState >= 2) {
+      handleVideoReady();
+    }
+
     rafId = requestAnimationFrame(tick);
 
     return () => {
       cancelAnimationFrame(rafId);
       io.disconnect();
+      video.removeEventListener("loadedmetadata", handleVideoReady);
+      video.removeEventListener("loadeddata", handleVideoReady);
+      video.removeEventListener("canplay", handleVideoReady);
+      video.removeEventListener("seeked", handleSeeked);
       section.removeEventListener("mousemove", handleMouseMove);
+      section.removeEventListener("touchmove", handleTouchMove);
       section.removeEventListener("mouseleave", handleMouseLeave);
-      cleanups.forEach((fn) => fn());
     };
   }, []);
 
@@ -211,41 +183,16 @@ export default function Hero() {
       aria-label="Milka Boo Hero"
       className="relative w-full min-h-[100svh] flex flex-col justify-end overflow-hidden bg-[#241a33] select-none"
     >
-      {/* 2D Mouse-Scrubbed Video Stack (no autoplay, object-fit: cover, all-keyframe MP4s) */}
-      {/* Base layer: LEVEL (Left <-> Center <-> Right) */}
+      {/* Mouse-Scrubbed Background Video (no autoplay, object-fit: cover, all-keyframe 1080p MP4) */}
       <video
-        ref={midRef}
-        src={VIDEOS.mid}
+        ref={videoRef}
+        src={VIDEO_SRC}
         muted
         playsInline
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-      />
-      {/* Upper gaze layer: UP (Top-Left <-> Up-Center <-> Top-Right) */}
-      <video
-        ref={upRef}
-        src={VIDEOS.up}
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-        tabIndex={-1}
-        style={{ opacity: 0 }}
-        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none will-change-[opacity]"
-      />
-      {/* Lower gaze layer: DOWN (Bottom-Left <-> Down-Center <-> Bottom-Right) */}
-      <video
-        ref={downRef}
-        src={VIDEOS.down}
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-        tabIndex={-1}
-        style={{ opacity: 0 }}
-        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none will-change-[opacity]"
       />
 
       {/* Subtle dark gradient overlay so foreground copy stays readable */}
