@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useLenis } from "@/components/SmoothScroll";
 
 /* ============================================================================
  * CONFIGURATION — Synchronized 2D Video Tracks (all-keyframe 1080p MP4s)
@@ -18,12 +17,7 @@ const VIDEOS = {
 const LERP_FACTOR = 0.14; // Smoothness for requestAnimationFrame lerp (0..1)
 const SEEK_EPSILON = 0.01; // Minimum time delta (seconds) required to trigger seek
 
-const HEADLINE = "Milka Boo";
-const SUBHEADING =
-  "Creamy fresh milk & handcrafted boba, shaken to order with magic.";
-
 export default function Hero() {
-  const lenis = useLenis();
   const sectionRef = useRef<HTMLElement>(null);
   const midRef = useRef<HTMLVideoElement>(null);
   const upRef = useRef<HTMLVideoElement>(null);
@@ -227,23 +221,12 @@ export default function Hero() {
     };
   }, []);
 
-  const scrollTo = (id: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    const target = document.querySelector<HTMLElement>(id);
-    if (!target) return;
-    if (lenis) {
-      lenis.scrollTo(target, { offset: 0, duration: 1.5 });
-    } else {
-      target.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
     <section
       ref={sectionRef}
       id="top"
       aria-label="Milka Boo Hero"
-      className="relative w-full min-h-[100svh] flex flex-col justify-end overflow-hidden bg-[#241a33] select-none"
+      className="relative w-full min-h-[100svh] overflow-hidden bg-[#241a33] select-none"
     >
       {/* 2D Mouse-Scrubbed Video Stack (Level, Up, Down — all-keyframe 1080p MP4s) */}
       {/* Base Level Track: Left (0.0s) -> Center (1.4s) -> Right (2.55s) */}
@@ -284,44 +267,6 @@ export default function Hero() {
         style={{ opacity: 0, imageRendering: "-webkit-optimize-contrast" }}
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none will-change-[opacity]"
       />
-
-      {/* Subtle bottom vignette overlay to keep foreground text razor-sharp without dulling video colors */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(20, 12, 34, 0.08) 0%, rgba(20, 12, 34, 0) 45%, rgba(20, 12, 34, 0.38) 100%)",
-        }}
-      />
-
-      {/* Foreground text layer */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 pb-10 sm:pb-14 pt-[var(--header-h)] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-        <div className="max-w-xl">
-          <h1 className="font-bherisi text-5xl sm:text-7xl leading-[0.95] text-white drop-shadow-[0_4px_18px_rgba(20,12,34,0.6)]">
-            {HEADLINE}
-          </h1>
-          <p className="mt-3 font-['Lato',sans-serif] text-base sm:text-lg font-medium text-white/90 drop-shadow-[0_2px_10px_rgba(20,12,34,0.75)]">
-            {SUBHEADING}
-          </p>
-        </div>
-
-        {/* Scroll cue into the video journey below */}
-        <a
-          href="#journey"
-          onClick={scrollTo("#journey")}
-          style={{ color: "#ffffff" }}
-          className="group inline-flex items-center gap-2 self-start sm:self-end font-['Lato',sans-serif] text-xs font-semibold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] transition-opacity hover:opacity-100 opacity-95"
-          aria-label="Scroll down to begin the journey"
-        >
-          <span>Scroll to begin the journey</span>
-          <span className="inline-block animate-bounce rounded-full bg-black/30 p-1.5 backdrop-blur-sm group-hover:bg-black/50">
-            <svg className="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </span>
-        </a>
-      </div>
     </section>
   );
 }
