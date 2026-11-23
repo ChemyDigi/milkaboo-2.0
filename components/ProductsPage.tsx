@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Sparkles, ShoppingBag, Heart, Star, Check, SlidersHorizontal, Plus } from "lucide-react";
+import { Sparkles, Heart } from "lucide-react";
 
 interface ProductItem {
   id: string;
@@ -105,7 +105,6 @@ const allProducts: ProductItem[] = [
 export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState<"all" | "signature" | "fruit">("all");
   const [likedProducts, setLikedProducts] = useState<Record<string, boolean>>({});
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const filteredProducts =
     selectedCategory === "all"
@@ -116,24 +115,8 @@ export default function ProductsPage() {
     setLikedProducts((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleAddToCart = (productName: string) => {
-    setToastMessage(`Added ${productName} to your boo bag! 💜`);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2500);
-  };
-
   return (
     <div className="relative w-full min-h-screen pt-32 sm:pt-36 md:pt-40 pb-24 px-4 sm:px-6 lg:px-8 bg-[#ede6f6] overflow-x-hidden">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-neutral-950 text-white shadow-2xl border border-white/10 animate-bounce">
-          <Sparkles className="w-5 h-5 text-pink-400" />
-          <span className="font-[family-name:var(--font-sansita)] font-bold text-sm sm:text-base">
-            {toastMessage}
-          </span>
-        </div>
-      )}
 
       {/* Floating Background Clouds */}
       <div className="absolute -left-28 top-20 w-[420px] h-[260px] pointer-events-none opacity-60 animate-float-slow [mask-image:radial-gradient(circle_at_center,black_45%,transparent_75%)] [-webkit-mask-image:radial-gradient(circle_at_center,black_45%,transparent_75%)]">
@@ -274,23 +257,6 @@ export default function ProductsPage() {
                         {t}
                       </span>
                     ))}
-                  </div>
-
-                  {/* Rating and CTA Button */}
-                  <div className="mt-5 pt-4 border-t border-neutral-200/60 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-700">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span>{product.rating}</span>
-                      <span className="text-neutral-400">({product.reviews})</span>
-                    </div>
-
-                    <button
-                      onClick={() => handleAddToCart(product.name)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-neutral-950 text-white font-[family-name:var(--font-sansita)] font-bold text-sm shadow-md hover:bg-pink-600 hover:shadow-lg active:scale-95 transition-all duration-300 cursor-pointer"
-                    >
-                      <ShoppingBag className="w-4 h-4" />
-                      <span>Add to Bag</span>
-                    </button>
                   </div>
                 </div>
               </div>

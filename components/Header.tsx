@@ -24,7 +24,7 @@ export default function Header() {
   }, [lenis]);
 
   return (
-    <header ref={header} className="header">
+    <header ref={header} className="header" style={{ viewTransitionName: "site-header" }}>
       <Link className="header__logo" href="/" aria-label="Milka Boo, home">
         <Image src="/images/logo.png" alt="Milka Boo" width={144} height={225} priority />
       </Link>

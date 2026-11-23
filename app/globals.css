@@ -382,3 +382,36 @@ html.nav-open { overflow: hidden; }
 .animate-float-reverse {
   animation: float-reverse 4.5s ease-in-out infinite 0.6s;
 }
+
+/* ---------- page transitions (React <ViewTransition> via components/PageTransition) ---------- */
+/* clicks pass through to the live page while the overlay animates */
+::view-transition { pointer-events: none; }
+
+/* the outgoing page sinks back and fades */
+::view-transition-old(.page-out) {
+  animation: 520ms var(--ease-in-out) both page-out;
+  transform-origin: var(--vt-x, 50vw) var(--vt-y, 50vh);
+}
+/* the incoming page opens as a circle from where the visitor clicked */
+::view-transition-new(.page-in) {
+  animation: 900ms var(--ease-in-out) both page-in;
+}
+@keyframes page-out {
+  to { opacity: 0; scale: 0.94; filter: blur(6px); }
+}
+@keyframes page-in {
+  from { clip-path: circle(0 at var(--vt-x, 50vw) var(--vt-y, 50vh)); }
+  to   { clip-path: circle(150vmax at var(--vt-x, 50vw) var(--vt-y, 50vh)); }
+}
+
+/* the header is the fixed anchor: it never slides or fades */
+::view-transition-group(site-header) { animation: none; z-index: 100; }
+::view-transition-old(site-header) { display: none; }
+::view-transition-new(site-header) { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(.page-out) { animation: 200ms ease both fade-out; }
+  ::view-transition-new(.page-in) { animation: 200ms ease both fade-in; }
+  @keyframes fade-out { to { opacity: 0; } }
+  @keyframes fade-in { from { opacity: 0; } }
+}

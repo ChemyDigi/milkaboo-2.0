@@ -3,6 +3,7 @@ import { Sansita } from "next/font/google";
 import localFont from "next/font/local";
 import ProductsPage from "@/components/ProductsPage";
 import Footer from "@/components/Footer";
+import PageTransition from "@/components/PageTransition";
 
 const bherisi = localFont({
   src: "../../public/fonts/Bherisi-Regular.ttf",
@@ -25,11 +26,13 @@ export const metadata: Metadata = {
 
 export default function MenuPage() {
   return (
-    <main className="min-h-screen flex flex-col bg-[#ede6f6]">
-      <div className={`${bherisi.variable} ${sansita.variable} milkaboo-products flex-1 flex flex-col bg-[#ede6f6]`}>
-        <ProductsPage />
-      </div>
-      <Footer />
-    </main>
+    <PageTransition>
+      <main className="min-h-screen flex flex-col bg-[#ede6f6]">
+        <div className={`${bherisi.variable} ${sansita.variable} milkaboo-products flex-1 flex flex-col bg-[#ede6f6]`}>
+          <ProductsPage />
+        </div>
+        <Footer />
+      </main>
+    </PageTransition>
   );
 }
