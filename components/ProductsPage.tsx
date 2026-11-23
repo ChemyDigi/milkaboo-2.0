@@ -103,13 +103,7 @@ const allProducts: ProductItem[] = [
 ];
 
 export default function ProductsPage() {
-  const [selectedCategory, setSelectedCategory] = useState<"all" | "signature" | "fruit">("all");
   const [likedProducts, setLikedProducts] = useState<Record<string, boolean>>({});
-
-  const filteredProducts =
-    selectedCategory === "all"
-      ? allProducts
-      : allProducts.filter((p) => p.category === selectedCategory);
 
   const toggleLike = (id: string) => {
     setLikedProducts((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -146,30 +140,9 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        {/* Category Filters */}
-        <div className="mt-10 sm:mt-12 flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-          {[
-            { id: "all", label: "All Flavors" },
-            { id: "signature", label: "Signature Milk" },
-            { id: "fruit", label: "Fruity Magic" },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id as any)}
-              className={`px-6 py-2.5 rounded-full text-sm sm:text-base font-[family-name:var(--font-sansita)] font-bold transition-all duration-300 cursor-pointer ${
-                selectedCategory === cat.id
-                  ? "bg-neutral-950 text-white shadow-md scale-105"
-                  : "bg-white/80 backdrop-blur-md text-neutral-800 hover:bg-white hover:shadow-xs border border-white/60"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
         {/* Product Grid */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
-          {filteredProducts.map((product) => {
+        <div className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+          {allProducts.map((product) => {
             const isLiked = likedProducts[product.id];
             return (
               <div
