@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { Sparkles, Heart } from "lucide-react";
 
 interface ProductItem {
   id: string;
@@ -103,12 +102,6 @@ const allProducts: ProductItem[] = [
 ];
 
 export default function ProductsPage() {
-  const [likedProducts, setLikedProducts] = useState<Record<string, boolean>>({});
-
-  const toggleLike = (id: string) => {
-    setLikedProducts((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   return (
     <div className="relative w-full min-h-screen pt-32 sm:pt-36 md:pt-40 pb-24 px-4 sm:px-6 lg:px-8 bg-[#ede6f6] overflow-x-hidden">
 
@@ -143,7 +136,6 @@ export default function ProductsPage() {
         {/* Product Grid */}
         <div className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
           {allProducts.map((product) => {
-            const isLiked = likedProducts[product.id];
             return (
               <div
                 key={product.id}
@@ -156,17 +148,6 @@ export default function ProductsPage() {
                   >
                     {product.tagline}
                   </span>
-                  <button
-                    onClick={() => toggleLike(product.id)}
-                    aria-label="Favorite product"
-                    className="w-10 h-10 rounded-full bg-white/80 hover:bg-white shadow-xs flex items-center justify-center transition-transform active:scale-90"
-                  >
-                    <Heart
-                      className={`w-5 h-5 transition-colors ${
-                        isLiked ? "fill-pink-500 text-pink-500" : "text-neutral-400 hover:text-neutral-700"
-                      }`}
-                    />
-                  </button>
                 </div>
 
                 {/* Drink Visual Area */}
