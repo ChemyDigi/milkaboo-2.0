@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 
 /* ============================================================================
  * CONFIGURATION — Synchronized 2D Video Tracks (all-keyframe 1080p MP4s)
@@ -267,6 +268,33 @@ export default function Hero() {
         style={{ opacity: 0, imageRendering: "-webkit-optimize-contrast" }}
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none will-change-[opacity]"
       />
+
+      {/* Interactive Hotspot Layer aligned with 16:9 object-cover video */}
+      <div
+        className="pointer-events-none absolute"
+        style={{
+          left: "50%",
+          top: "50%",
+          width: "max(100%, calc(100svh * 16 / 9))",
+          height: "max(100svh, calc(100vw * 9 / 16))",
+          transform: "translate(-50%, -50%)",
+        }}
+      >
+        {/* Clickable Oval Sign: Menu -> /menu */}
+        <Link
+          href="/menu"
+          aria-label="Menu"
+          className="pointer-events-auto absolute rounded-[50%] cursor-pointer focus:outline-none"
+          style={{
+            left: "67.9%",
+            top: "38.6%",
+            width: "7.8%",
+            height: "18.0%",
+          }}
+        >
+          <span className="sr-only">Menu</span>
+        </Link>
+      </div>
     </section>
   );
 }

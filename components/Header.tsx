@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import MenuButton from "@/components/MenuButton";
 import NavOverlay from "@/components/NavOverlay";
 import { useLenis } from "@/components/SmoothScroll";
@@ -39,9 +40,9 @@ export default function Header() {
   return (
     <>
       <header ref={header} className="header">
-        <a className="header__logo" href="#top" aria-label="Milka Boo, home">
+        <Link className="header__logo" href="/" aria-label="Milka Boo, home">
           <Image src="/images/logo.png" alt="Milka Boo" width={144} height={225} priority />
-        </a>
+        </Link>
         <div className="header__burger-slot">
           <MenuButton ref={button} open={open} onToggle={() => (open ? close() : setOpen(true))} />
         </div>
