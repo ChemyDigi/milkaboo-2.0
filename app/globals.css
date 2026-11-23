@@ -85,7 +85,11 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: bala
 p { text-wrap: pretty; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-.font-bherisi { font-family: var(--font-bherisi); }
+.font-bherisi,
+.milkaboo-products .font-bherisi,
+.milkaboo-products :is(h1, h2, h3).font-bherisi {
+  font-family: var(--font-bherisi), "Bherisi", sans-serif !important;
+}
 .font-jamoa { font-family: var(--font-jamoa); }
 .font-lato { font-family: var(--font-lato); }
 
@@ -316,4 +320,65 @@ html.nav-open { overflow: hidden; }
   .hero__title { font-size: clamp(2.4rem, 11vw, 3.4rem); }
   .hero__body { font-size: 0.95rem; }
   .hero__cue { display: none; }
+}
+
+/* ---------- products menu page (copied from the milkaboo repo, shown at /menu) ---------- */
+/* the page is styled with Tailwind utilities, which live in Tailwind's cascade layers. the element resets at the top
+   of this file are unlayered, so they would beat those utilities (button padding and colours, heading fonts, margins).
+   inside the page they roll back to the layered values, so it renders exactly as it did in the original repo */
+.milkaboo-products {
+  font-family: Arial, Helvetica, sans-serif;   /* the original repo's body font */
+  font-size: 1rem;
+  color: #171717;
+}
+.milkaboo-products :is(h1, h2, h3):not(.font-bherisi) {
+  font-family: revert-layer; font-weight: revert-layer; letter-spacing: revert-layer;
+  text-wrap: revert-layer; hyphens: revert-layer;
+}
+.milkaboo-products :is(h1, h2, h3, p) { margin: revert-layer; }
+.milkaboo-products p { text-wrap: revert-layer; }
+.milkaboo-products button {
+  font: revert-layer; color: revert-layer; background: revert-layer;
+  border: revert-layer; padding: revert-layer; cursor: revert-layer;
+}
+.milkaboo-products a { color: revert-layer; }
+
+/* floating animations used by the products page (from the milkaboo repo's globals.css) */
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(3deg);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(8px) rotate(-3deg);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(3deg);
+  }
+}
+
+.animate-float-gentle {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 4.5s ease-in-out infinite 0.6s;
 }

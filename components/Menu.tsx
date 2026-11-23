@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 
-const CATEGORIES = ["All", "Fresh Milk Teas", "Signature Boba", "Fruit & Refreshers"] as const;
+const CATEGORIES = ["All Flavors", "Signature Milk", "Fruity Magic"] as const;
 
 const MENU_ITEMS = [
   {
     name: "Classic Brown Sugar Pearl Milk",
-    category: "Signature Boba",
+    category: "Signature Milk",
     emoji: "🧋",
     color: "#f5e6d3",
     tag: "Bestseller",
@@ -16,7 +16,7 @@ const MENU_ITEMS = [
   },
   {
     name: "Taro Stardust Milk Tea",
-    category: "Fresh Milk Teas",
+    category: "Signature Milk",
     emoji: "🍠",
     color: "#ebdff2",
     tag: "Fan Favorite",
@@ -25,7 +25,7 @@ const MENU_ITEMS = [
   },
   {
     name: "Matcha Melon Cloud",
-    category: "Fresh Milk Teas",
+    category: "Signature Milk",
     emoji: "🍵",
     color: "#e2f2e5",
     tag: "Seasonal",
@@ -34,7 +34,7 @@ const MENU_ITEMS = [
   },
   {
     name: "Berry Blossom Rose Tea",
-    category: "Fruit & Refreshers",
+    category: "Fruity Magic",
     emoji: "🍓",
     color: "#fce4ec",
     tag: "New",
@@ -43,7 +43,7 @@ const MENU_ITEMS = [
   },
   {
     name: "Green Apple Orchard Fizz",
-    category: "Fruit & Refreshers",
+    category: "Fruity Magic",
     emoji: "🍏",
     color: "#e8f5e9",
     tag: "Refreshing",
@@ -52,7 +52,7 @@ const MENU_ITEMS = [
   },
   {
     name: "Golden Custard Milk Tea",
-    category: "Fresh Milk Teas",
+    category: "Signature Milk",
     emoji: "🍮",
     color: "#fff8e1",
     tag: "Velvety",
@@ -62,43 +62,43 @@ const MENU_ITEMS = [
 ];
 
 export default function Menu() {
-  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [activeCategory, setActiveCategory] = useState<string>("All Flavors");
 
   const filtered =
-    activeCategory === "All"
+    activeCategory === "All Flavors"
       ? MENU_ITEMS
       : MENU_ITEMS.filter((item) => item.category === activeCategory);
 
   return (
-    <section id="menu" className="relative w-full py-24 sm:py-32 px-4 sm:px-8 bg-[#f5effa] text-[#241a33]">
+    <section id="menu" className="relative w-full py-20 sm:py-28 px-4 sm:px-8 bg-[#f5effa] text-[#241a33]">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-white/60 shadow-sm mb-4">
-            <span className="text-sm">🧋</span>
-            <span className="font-['Lato',sans-serif] text-xs font-bold uppercase tracking-widest text-[#5e5470]">
-              Handcrafted Menu
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-white/70 shadow-sm mb-5">
+            <span className="w-2 h-2 rounded-full bg-[#ff7cbe]" />
+            <span className="font-['Lato',sans-serif] text-xs font-bold uppercase tracking-wider text-[#241a33]">
+              Handcrafted with Magic
             </span>
           </div>
 
-          <h2 className="font-bherisi text-4xl sm:text-6xl text-[#241a33] mb-4">
-            Shaken to <span className="text-[#ff5faf]">Perfection</span>
-          </h2>
-          <p className="font-['Lato',sans-serif] text-base sm:text-lg text-[#5e5470]">
-            Customize your sweetness, ice level, and artisanal toppings at the counter.
+          <h1 className="font-bherisi text-5xl sm:text-7xl font-bold tracking-tight text-[#140c22] uppercase mb-5 leading-none">
+            Boo-Licious Menu
+          </h1>
+          <p className="font-['Lato',sans-serif] text-base sm:text-lg text-[#5e5470] max-w-xl mx-auto leading-relaxed">
+            Every drink is brewed fresh with premium tea leaves, silky dairy blends, and bouncy boba pearls.
           </p>
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-12">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-12">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => setActiveCategory(cat)}
-              className={`rounded-full px-5 py-2 font-['Lato',sans-serif] text-xs sm:text-sm font-bold transition-all ${
+              className={`rounded-full px-7 py-2.5 font-['Lato',sans-serif] text-sm font-bold transition-all duration-200 ${
                 activeCategory === cat
-                  ? "bg-[#241a33] text-white shadow-md scale-105"
-                  : "bg-white/80 text-[#5e5470] hover:bg-white hover:text-[#241a33] border border-white/60"
+                  ? "bg-[#140c22] text-white shadow-md scale-105"
+                  : "bg-white text-[#241a33] hover:bg-white/90 shadow-sm border border-black/5"
               }`}
             >
               {cat}
