@@ -255,6 +255,7 @@ export default function Hero() {
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
+        style={{ imageRendering: "-webkit-optimize-contrast" }}
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
       />
 
@@ -267,7 +268,7 @@ export default function Hero() {
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
-        style={{ opacity: 0 }}
+        style={{ opacity: 0, imageRendering: "-webkit-optimize-contrast" }}
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none will-change-[opacity]"
       />
 
@@ -280,17 +281,17 @@ export default function Hero() {
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
-        style={{ opacity: 0 }}
+        style={{ opacity: 0, imageRendering: "-webkit-optimize-contrast" }}
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none will-change-[opacity]"
       />
 
-      {/* Subtle dark gradient overlay so foreground copy stays readable */}
+      {/* Subtle bottom vignette overlay to keep foreground text razor-sharp without dulling video colors */}
       <div
         aria-hidden="true"
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(20, 12, 34, 0.25) 0%, rgba(20, 12, 34, 0.06) 42%, rgba(20, 12, 34, 0.62) 100%)",
+            "linear-gradient(180deg, rgba(20, 12, 34, 0.08) 0%, rgba(20, 12, 34, 0) 45%, rgba(20, 12, 34, 0.38) 100%)",
         }}
       />
 
