@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useLenis } from "@/components/SmoothScroll";
 
 /** Logo at the left. No bar: the page's own ground shows through. */
@@ -23,10 +24,10 @@ export default function Header() {
   }, [lenis]);
 
   return (
-    <header ref={header} className="header">
-      <a className="header__logo" href="#top" aria-label="Milka Boo, home">
+    <header ref={header} className="header" style={{ viewTransitionName: "site-header" }}>
+      <Link className="header__logo" href="/" aria-label="Milka Boo, home">
         <Image src="/images/logo.png" alt="Milka Boo" width={144} height={225} priority />
-      </a>
+      </Link>
     </header>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useLenis } from "@/components/SmoothScroll";
 
 /* ============================================================================
@@ -215,7 +216,7 @@ export default function Hero() {
       ref={sectionRef}
       id="top"
       aria-label="Milka Boo Hero"
-      className="relative w-full min-h-[100svh] flex flex-col justify-end overflow-hidden bg-[#241a33] select-none"
+      className="relative w-full min-h-[100svh] overflow-hidden bg-[#241a33] select-none"
     >
       {/* Fallback / Instant Poster Frame (zero flash of black) */}
       <img
@@ -233,6 +234,33 @@ export default function Hero() {
         aria-hidden="true"
         className="absolute inset-0 w-full h-full pointer-events-none"
       />
+
+      {/* Interactive Hotspot Layer aligned with 16:9 object-cover video/canvas */}
+      <div
+        className="pointer-events-none absolute"
+        style={{
+          left: "50%",
+          top: "50%",
+          width: "max(100%, calc(100svh * 16 / 9))",
+          height: "max(100svh, calc(100vw * 9 / 16))",
+          transform: "translate(-50%, -50%)",
+        }}
+      >
+        {/* Clickable Oval Sign: Menu -> /menu */}
+        <Link
+          href="/menu"
+          aria-label="Menu"
+          className="pointer-events-auto absolute rounded-[50%] cursor-pointer focus:outline-none"
+          style={{
+            left: "67.9%",
+            top: "38.6%",
+            width: "7.8%",
+            height: "18.0%",
+          }}
+        >
+          <span className="sr-only">Menu</span>
+        </Link>
+      </div>
 
       {/* Scroll cue into the video journey below */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 pb-10 sm:pb-14 flex justify-end">

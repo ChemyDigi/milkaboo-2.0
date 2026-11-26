@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, type RefObject } from "react";
+import Link from "next/link";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { useLenis } from "@/components/SmoothScroll";
 
 const LINKS = [
-  { href: "#top", label: "Home" },
-  { href: "#journey", label: "The Journey" },
-  { href: "#menu", label: "Menu" },
+  { href: "/", label: "Home" },
+  { href: "/#journey", label: "The Journey" },
+  { href: "/menu", label: "Menu" },
 ];
 
 type Props = {
@@ -99,15 +100,21 @@ export default function NavOverlay({ open, onClose, originRef }: Props) {
   }, [open, onClose, lenis, originRef]);
 
   const go = (href: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
+    if (href.startsWith("#") || href.startsWith("/#")) {
+      const hash = href.includes("#") ? href.substring(href.indexOf("#")) : href;
+      const target = document.querySelector<HTMLElement>(hash);
+      if (target) {
+        e.preventDefault();
+        onClose();
+        window.setTimeout(() => {
+          if (lenis) lenis.scrollTo(target, { offset: 0, duration: 1.4 });
+          else target.scrollIntoView();
+          history.replaceState(null, "", hash);
+        }, 420);
+        return;
+      }
+    }
     onClose();
-    const target = document.querySelector<HTMLElement>(href);
-    window.setTimeout(() => {
-      if (!target) return;
-      if (lenis) lenis.scrollTo(target, { offset: 0, duration: 1.4 });
-      else target.scrollIntoView();
-      history.replaceState(null, "", href);
-    }, 420);
   };
 
   return (
@@ -124,9 +131,9 @@ export default function NavOverlay({ open, onClose, originRef }: Props) {
       <ul className="nav__list">
         {LINKS.map((l) => (
           <li key={l.href}>
-            <a className="nav__link" href={l.href} onClick={go(l.href)}>
+            <Link className="nav__link" href={l.href} onClick={go(l.href)}>
               <span>{l.label}</span>
-            </a>
+            </Link>
           </li>
         ))}
       </ul>

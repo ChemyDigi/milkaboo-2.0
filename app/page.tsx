@@ -1,15 +1,14 @@
 import Hero from "@/components/Hero";
 import VideoJourney from "@/components/VideoJourney";
-import Menu from "@/components/Menu";
-import Footer from "@/components/Footer";
+import PageTransition from "@/components/PageTransition";
 
 export default function Home() {
   return (
-    <main>
-      <Hero />
-      <VideoJourney />
-      <Menu />
-      <Footer />
-    </main>
+    <PageTransition>
+      <main>
+        <Hero />
+        <VideoJourney />
+      </main>
+    </PageTransition>
   );
 }
